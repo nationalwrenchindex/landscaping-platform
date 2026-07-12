@@ -1,0 +1,27 @@
+{
+  "framework": "nextjs",
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "crons": [
+    {
+      "path": "/api/notifications/reminders",
+      "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/torquewrench-send",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/foreman-grace-period-release",
+      "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/social-generate",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/foreman-hours",
+      "schedule": "*/5 * * * *"
+    }
+  ]
+}

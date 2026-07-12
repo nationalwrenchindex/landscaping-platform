@@ -1,0 +1,700 @@
+'use client'
+
+import { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
+import type { Invoice, InvoiceStatus, InvoiceProgressStatus, LineItem, PaymentMethod } from '@/types/financials'
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const fmt = (n: number) =>
+  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n)
+
+const fmtDate = (s: string) =>
+  new Date(s + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+
+const fmtPaidDate = (s: string | null | undefined) => {
+  if (!s) return '—'
+  return new Date(s).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  cash:    'Cash',
+  card:    'Card',
+  check:   'Check',
+  venmo:   'Venmo',
+  zelle:   'Zelle',
+  cashapp: 'Cash App',
+  paypal:  'PayPal',
+  other:   'Other',
+}
+
+function round2(n: number) { return Math.round(n * 100) / 100 }
+
+function genInvoiceNumber() {
+  const d = new Date()
+  const y = d.getFullYear().toString().slice(2)
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const r = Math.random().toString(36).slice(2, 6).toUpperCase()
+  return `INV-${y}${m}-${r}`
+}
+
+function today() {
+  return new Date().toISOString().slice(0, 10)
+}
+
+// ─── Status badges ────────────────────────────────────────────────────────────
+
+// New invoice_status badge (Phase 3+)
+const PROGRESS_STATUS_META: Record<InvoiceProgressStatus, { label: string; style: React.CSSProperties }> = {
+  in_progress:       { label: 'In Progress',       style: { backgroundColor: '#f59e0b', color: '#fff' } },
+  finalized:         { label: 'Finalized',          style: { backgroundColor: '#15803d', color: '#fff' } },
+  awaiting_payment:  { label: 'Awaiting Payment',   style: { backgroundColor: '#8b5cf6', color: '#fff' } },
+  paid:              { label: 'Paid',               style: { backgroundColor: '#10b981', color: '#fff' } },
+  void:              { label: 'Void',               style: { backgroundColor: '#6b7280', color: '#fff' } },
+}
+
+// Legacy status badge (manually-created invoices)
+const LEGACY_STATUS_META: Record<InvoiceStatus, { label: string; cls: string }> = {
+  draft:     { label: 'Draft',     cls: 'bg-white/10 text-white/50' },
+  sent:      { label: 'Sent',      cls: 'bg-blue/20 text-blue' },
+  viewed:    { label: 'Viewed',    cls: 'bg-blue/20 text-blue' },
+  paid:      { label: 'Paid',      cls: 'bg-success/20 text-success' },
+  overdue:   { label: 'Overdue',   cls: 'bg-danger/20 text-danger' },
+  cancelled: { label: 'Cancelled', cls: 'bg-white/5 text-white/30' },
+}
+
+function InvoiceStatusBadge({ invoice }: { invoice: Invoice }) {
+  // Quote-converted invoices use invoice_status; manual invoices use legacy status
+  if (invoice.source_quote_id && invoice.invoice_status) {
+    const meta = PROGRESS_STATUS_META[invoice.invoice_status] ?? PROGRESS_STATUS_META.in_progress
+    return (
+      <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={meta.style}>
+        {meta.label}
+      </span>
+    )
+  }
+  // Fallback: if invoice_status is set (from migration DEFAULT), still show progress badge
+  if (invoice.invoice_status && invoice.invoice_status !== 'in_progress') {
+    const meta = PROGRESS_STATUS_META[invoice.invoice_status] ?? PROGRESS_STATUS_META.in_progress
+    return (
+      <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={meta.style}>
+        {meta.label}
+      </span>
+    )
+  }
+  // Legacy: show old status badge
+  const meta = LEGACY_STATUS_META[invoice.status] ?? LEGACY_STATUS_META.draft
+  return (
+    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${meta.cls}`}>{meta.label}</span>
+  )
+}
+
+// ─── Empty line item ──────────────────────────────────────────────────────────
+
+const emptyLine = (): LineItem => ({ description: '', quantity: 1, unit_price: 0, total: 0 })
+
+// ─── Filter options ───────────────────────────────────────────────────────────
+
+// invoice_status filter (Phase 3+ lifecycle)
+// 'active' is a virtual filter: in_progress + awaiting_payment (handled server-side)
+const INVOICE_STATUS_FILTERS: { value: InvoiceProgressStatus | '' | 'active'; label: string }[] = [
+  { value: 'active',           label: 'All Active' },
+  { value: '',                 label: 'All' },
+  { value: 'in_progress',      label: 'In Progress' },
+  { value: 'awaiting_payment', label: 'Awaiting Payment' },
+  { value: 'paid',             label: 'Paid' },
+  { value: 'void',             label: 'Void' },
+]
+
+const SOURCE_FILTERS = [
+  { value: '',             label: 'All Sources' },
+  { value: 'manual',      label: 'Manual' },
+  { value: 'quickwrench', label: 'QuickWrench' },
+  { value: 'quote',       label: 'From Quote' },
+]
+
+const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
+  { value: 'cash',    label: 'Cash' },
+  { value: 'card',    label: 'Card' },
+  { value: 'check',   label: 'Check' },
+  { value: 'venmo',   label: 'Venmo' },
+  { value: 'zelle',   label: 'Zelle' },
+  { value: 'cashapp', label: 'Cash App' },
+  { value: 'paypal',  label: 'PayPal' },
+  { value: 'other',   label: 'Other' },
+]
+
+// ─── Main component ───────────────────────────────────────────────────────────
+
+export default function InvoicesTab() {
+  const router = useRouter()
+  const [invoices,             setInvoices]             = useState<Invoice[]>([])
+  const [loading,              setLoading]              = useState(true)
+  const [invoiceStatusFilter,  setInvoiceStatusFilter]  = useState<InvoiceProgressStatus | '' | 'active'>('active')
+  const [sourceFilter,         setSourceFilter]         = useState('')
+  const [error,                setError]                = useState<string | null>(null)
+  const [showForm,      setShowForm]      = useState(false)
+  const [formError,     setFormError]     = useState<string | null>(null)
+  const [submitting,    setSubmitting]    = useState(false)
+  const [actionLoading, setActionLoading] = useState<string | null>(null)
+
+  // Action menu state
+  const [openMenu, setOpenMenu] = useState<string | null>(null)
+  const [payMethodMap, setPayMethodMap] = useState<Record<string, PaymentMethod>>({})
+
+  // Collected this month (separate background fetch, always visible)
+  const [totalCollectedThisMonth, setTotalCollectedThisMonth] = useState<number | null>(null)
+
+  useEffect(() => {
+    const now   = new Date()
+    const year  = now.getFullYear()
+    const month = now.getMonth()
+    fetch('/api/invoices?invoice_status=paid')
+      .then(r => r.json())
+      .then(json => {
+        if (!Array.isArray(json.invoices)) return
+        const sum = (json.invoices as Invoice[])
+          .filter(inv => {
+            if (!inv.paid_at) return false
+            const d = new Date(inv.paid_at)
+            return d.getFullYear() === year && d.getMonth() === month
+          })
+          .reduce((s, inv) => s + inv.total, 0)
+        setTotalCollectedThisMonth(sum)
+      })
+      .catch(() => {})
+  }, [])
+
+  // ── New invoice form state ──
+  const [form, setForm] = useState(() => ({
+    invoice_number:  genInvoiceNumber(),
+    invoice_date:    today(),
+    due_date:        '',
+    customer_id:     '',
+    line_items:      [emptyLine()] as LineItem[],
+    tax_rate:        0,
+    discount_amount: 0,
+    notes:           '',
+    terms:           'Payment due upon receipt.',
+    status:          'draft' as InvoiceStatus,
+  }))
+
+  // ── Computed totals ──
+  const subtotal = form.line_items.reduce((s, l) => s + l.total, 0)
+  const taxAmt   = round2(subtotal * (form.tax_rate / 100))
+  const total    = round2(Math.max(0, subtotal + taxAmt - form.discount_amount))
+
+  // ── Fetch invoices ──
+  const fetchInvoices = useCallback(async (invoiceStatus: string | InvoiceProgressStatus | 'active', source: string) => {
+    setLoading(true)
+    setError(null)
+    try {
+      const params = new URLSearchParams()
+      if (invoiceStatus) params.set('invoice_status', invoiceStatus)
+      if (source)        params.set('source', source)
+      const url  = params.size > 0 ? `/api/invoices?${params}` : '/api/invoices'
+      const res  = await fetch(url)
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error ?? 'Failed to load invoices')
+      setInvoices(json.invoices)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { fetchInvoices(invoiceStatusFilter, sourceFilter) }, [invoiceStatusFilter, sourceFilter, fetchInvoices])
+
+  // ── Line item helpers ──
+  function updateLine(index: number, field: keyof LineItem, value: string | number) {
+    setForm(prev => {
+      const items = prev.line_items.map((item, i) => {
+        if (i !== index) return item
+        const updated = { ...item, [field]: value }
+        updated.total = Number(updated.quantity) * Number(updated.unit_price)
+        return updated
+      })
+      return { ...prev, line_items: items }
+    })
+  }
+
+  function addLine() {
+    setForm(prev => ({ ...prev, line_items: [...prev.line_items, emptyLine()] }))
+  }
+
+  function removeLine(index: number) {
+    setForm(prev => ({
+      ...prev,
+      line_items: prev.line_items.filter((_, i) => i !== index),
+    }))
+  }
+
+  // ── Submit new invoice ──
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setFormError(null)
+    if (form.line_items.length === 0) {
+      setFormError('Add at least one line item.')
+      return
+    }
+    setSubmitting(true)
+    try {
+      const res = await fetch('/api/invoices', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          invoice_number:  form.invoice_number,
+          invoice_date:    form.invoice_date,
+          due_date:        form.due_date || null,
+          customer_id:     form.customer_id || null,
+          line_items:      form.line_items,
+          subtotal,
+          tax_rate:        form.tax_rate / 100,
+          tax_amount:      taxAmt,
+          discount_amount: form.discount_amount,
+          total,
+          status:          form.status,
+          notes:           form.notes || null,
+          terms:           form.terms || null,
+        }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error ?? 'Failed to create invoice')
+      setInvoices(prev => [json.invoice, ...prev])
+      setShowForm(false)
+      setForm({
+        invoice_number:  genInvoiceNumber(),
+        invoice_date:    today(),
+        due_date:        '',
+        customer_id:     '',
+        line_items:      [emptyLine()],
+        tax_rate:        0,
+        discount_amount: 0,
+        notes:           '',
+        terms:           'Payment due upon receipt.',
+        status:          'draft',
+      })
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : 'Unknown error')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  // ── Update invoice status ──
+  async function updateStatus(
+    invoiceId: string,
+    status: 'paid' | 'unpaid' | 'overdue',
+    payment_method?: PaymentMethod
+  ) {
+    setActionLoading(invoiceId)
+    setOpenMenu(null)
+    try {
+      const res = await fetch(`/api/invoices/${invoiceId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status, payment_method: payment_method ?? null }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error ?? 'Failed to update invoice')
+      setInvoices(prev => prev.map(inv => inv.id === invoiceId ? json.invoice : inv))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error')
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  // ── Total Outstanding ──
+  const totalOutstanding = invoices
+    .filter(inv => inv.invoice_status === 'awaiting_payment')
+    .reduce((sum, inv) => sum + inv.total, 0)
+
+  return (
+    <div className="space-y-4">
+
+      {/* Metric cards */}
+      {(totalOutstanding > 0 || (totalCollectedThisMonth != null && totalCollectedThisMonth > 0)) && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {totalOutstanding > 0 && (
+            <div className="flex items-center gap-4 px-5 py-4 bg-purple-500/10 border border-purple-500/25 rounded-2xl">
+              <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0">
+                <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+              </div>
+              <div>
+                <p className="text-purple-400/70 text-xs uppercase tracking-widest">Total Outstanding</p>
+                <p className="font-condensed font-bold text-purple-300 text-2xl leading-none">{fmt(totalOutstanding)}</p>
+                <p className="text-purple-400/40 text-xs mt-0.5">Awaiting payment</p>
+              </div>
+            </div>
+          )}
+          {totalCollectedThisMonth != null && totalCollectedThisMonth > 0 && (
+            <div className="flex items-center gap-4 px-5 py-4 bg-success/10 border border-success/25 rounded-2xl">
+              <div className="w-10 h-10 rounded-full bg-success/20 flex items-center justify-center flex-shrink-0">
+                <svg className="w-5 h-5 text-success" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+              </div>
+              <div>
+                <p className="text-success/70 text-xs uppercase tracking-widest">Collected This Month</p>
+                <p className="font-condensed font-bold text-success text-2xl leading-none">{fmt(totalCollectedThisMonth)}</p>
+                <p className="text-success/40 text-xs mt-0.5">Paid invoices</p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Filters + New Invoice button */}
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div className="space-y-1.5">
+          {/* Invoice status filters (Phase 3 lifecycle) */}
+          <div className="flex items-center gap-1 overflow-x-auto">
+            {INVOICE_STATUS_FILTERS.map(f => (
+              <button
+                key={f.value}
+                onClick={() => setInvoiceStatusFilter(f.value)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
+                  invoiceStatusFilter === f.value
+                    ? 'bg-orange/15 text-orange'
+                    : 'text-white/40 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+          {/* Source filter */}
+          <div className="flex items-center gap-1 overflow-x-auto">
+            <span className="text-white/25 text-[10px] uppercase tracking-widest mr-1">Source</span>
+            {SOURCE_FILTERS.map(f => (
+              <button
+                key={f.value}
+                onClick={() => setSourceFilter(f.value)}
+                className={`px-2.5 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-colors ${
+                  sourceFilter === f.value
+                    ? 'bg-blue/15 text-blue-light'
+                    : 'text-white/30 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <button
+          onClick={() => { setShowForm(v => !v); setFormError(null) }}
+          className="flex items-center gap-1.5 px-4 py-2 bg-orange hover:bg-orange-hover text-white font-condensed font-semibold text-sm tracking-wide rounded-lg transition-colors whitespace-nowrap"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          New Invoice
+        </button>
+      </div>
+
+      {/* ── Create invoice form ── */}
+      {showForm && (
+        <div className="nwi-card border-orange/30">
+          <h3 className="font-condensed font-bold text-lg text-white tracking-wide mb-4">New Invoice</h3>
+          {formError && <div className="alert-error mb-4">{formError}</div>}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Row 1 */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className="nwi-label">Invoice #</label>
+                <input className="nwi-input" value={form.invoice_number}
+                  onChange={e => setForm(p => ({ ...p, invoice_number: e.target.value }))} required />
+              </div>
+              <div>
+                <label className="nwi-label">Invoice Date</label>
+                <input type="date" className="nwi-input" value={form.invoice_date}
+                  onChange={e => setForm(p => ({ ...p, invoice_date: e.target.value }))} required />
+              </div>
+              <div>
+                <label className="nwi-label">Due Date</label>
+                <input type="date" className="nwi-input" value={form.due_date}
+                  onChange={e => setForm(p => ({ ...p, due_date: e.target.value }))} />
+              </div>
+            </div>
+
+            {/* Row 2 */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="nwi-label">Customer ID <span className="normal-case text-white/20">(optional)</span></label>
+                <input className="nwi-input" placeholder="UUID from Intel Hub"
+                  value={form.customer_id}
+                  onChange={e => setForm(p => ({ ...p, customer_id: e.target.value }))} />
+              </div>
+              <div>
+                <label className="nwi-label">Status</label>
+                <select className="nwi-input" value={form.status}
+                  onChange={e => setForm(p => ({ ...p, status: e.target.value as InvoiceStatus }))}>
+                  <option value="draft">Draft</option>
+                  <option value="sent">Sent</option>
+                  <option value="paid">Paid</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Line items */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="nwi-label mb-0">Line Items</label>
+                <button type="button" onClick={addLine}
+                  className="text-orange text-xs hover:underline">
+                  + Add item
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                {/* Header */}
+                <div className="hidden sm:grid grid-cols-[1fr_80px_100px_90px_28px] gap-2 px-1">
+                  {['Description', 'Qty', 'Unit Price', 'Total', ''].map(h => (
+                    <span key={h} className="text-white/30 text-xs uppercase tracking-widest">{h}</span>
+                  ))}
+                </div>
+
+                {form.line_items.map((item, idx) => (
+                  <div key={idx} className="grid grid-cols-[1fr_80px_100px_90px_28px] gap-2 items-center">
+                    <input
+                      className="nwi-input py-2 text-sm"
+                      placeholder="Description"
+                      value={item.description}
+                      onChange={e => updateLine(idx, 'description', e.target.value)}
+                      required
+                    />
+                    <input
+                      type="number" min="1" step="1"
+                      className="nwi-input py-2 text-sm text-center"
+                      value={item.quantity}
+                      onChange={e => updateLine(idx, 'quantity', Number(e.target.value))}
+                    />
+                    <input
+                      type="number" min="0" step="0.01"
+                      className="nwi-input py-2 text-sm text-right"
+                      value={item.unit_price}
+                      onChange={e => updateLine(idx, 'unit_price', Number(e.target.value))}
+                    />
+                    <div className="nwi-input py-2 text-sm text-right bg-dark-card/50 cursor-default">
+                      {fmt(item.total)}
+                    </div>
+                    <button type="button" onClick={() => removeLine(idx)}
+                      className="text-white/20 hover:text-danger transition-colors text-lg leading-none">
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Totals row */}
+            <div className="flex flex-col items-end gap-1 border-t border-dark-border pt-4">
+              <div className="flex gap-8 text-sm">
+                <span className="text-white/40">Subtotal</span>
+                <span className="text-white w-24 text-right">{fmt(subtotal)}</span>
+              </div>
+              <div className="flex items-center gap-4 text-sm">
+                <span className="text-white/40">Tax</span>
+                <input
+                  type="number" min="0" max="100" step="0.1"
+                  className="nwi-input py-1 text-xs text-right w-20"
+                  value={form.tax_rate}
+                  onChange={e => setForm(p => ({ ...p, tax_rate: Number(e.target.value) }))}
+                  placeholder="0"
+                />
+                <span className="text-white/40 text-xs">%</span>
+                <span className="text-white w-24 text-right">{fmt(taxAmt)}</span>
+              </div>
+              <div className="flex items-center gap-4 text-sm">
+                <span className="text-white/40">Discount</span>
+                <input
+                  type="number" min="0" step="0.01"
+                  className="nwi-input py-1 text-xs text-right w-24"
+                  value={form.discount_amount}
+                  onChange={e => setForm(p => ({ ...p, discount_amount: Number(e.target.value) }))}
+                  placeholder="0.00"
+                />
+                <span className="text-white w-24 text-right text-danger">-{fmt(form.discount_amount)}</span>
+              </div>
+              <div className="flex gap-8 text-base font-bold border-t border-dark-border pt-2 mt-1">
+                <span className="text-white">Total</span>
+                <span className="text-orange w-24 text-right">{fmt(total)}</span>
+              </div>
+            </div>
+
+            {/* Notes & Terms */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="nwi-label">Notes <span className="normal-case text-white/20">(customer-facing)</span></label>
+                <textarea rows={2} className="nwi-input resize-none" value={form.notes}
+                  onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} />
+              </div>
+              <div>
+                <label className="nwi-label">Terms</label>
+                <textarea rows={2} className="nwi-input resize-none" value={form.terms}
+                  onChange={e => setForm(p => ({ ...p, terms: e.target.value }))} />
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 pt-2">
+              <button type="submit" disabled={submitting}
+                className="px-6 py-2.5 bg-orange hover:bg-orange-hover disabled:opacity-50 text-white font-condensed font-bold text-sm tracking-wide rounded-lg transition-colors">
+                {submitting ? 'Creating…' : 'Create Invoice'}
+              </button>
+              <button type="button" onClick={() => setShowForm(false)}
+                className="px-6 py-2.5 border border-dark-border hover:border-white/20 text-white/50 hover:text-white text-sm rounded-lg transition-colors">
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {error && <div className="alert-error">{error}</div>}
+
+      {/* ── Invoice list ── */}
+      {loading ? (
+        <div className="space-y-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="nwi-card animate-pulse h-14 bg-dark-card/50" />
+          ))}
+        </div>
+      ) : invoices.length === 0 ? (
+        <div className="nwi-card text-center py-12">
+          <svg className="w-10 h-10 text-white/10 mx-auto mb-3" fill="none" stroke="currentColor" strokeWidth={1} viewBox="0 0 24 24">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+          </svg>
+          <p className="text-white/30 text-sm">No invoices{invoiceStatusFilter ? ` with status "${invoiceStatusFilter.replace('_', ' ')}"` : ''}.</p>
+          <button onClick={() => setShowForm(true)}
+            className="mt-3 text-orange text-xs hover:underline">
+            Create your first invoice →
+          </button>
+        </div>
+      ) : (
+        <div className="nwi-card p-0">
+          {/* Table header */}
+          <div className="hidden sm:grid grid-cols-[140px_1fr_110px_90px_130px_100px_100px_44px] gap-4 px-5 py-3 border-b border-dark-border">
+            {['Invoice #', 'Customer', 'Date', 'Total', 'Status', 'Payment', 'Paid Date', ''].map(h => (
+              <span key={h} className="text-white/30 text-xs uppercase tracking-widest">{h}</span>
+            ))}
+          </div>
+
+          <div className="divide-y divide-dark-border">
+            {invoices.map(inv => {
+              const customerName = inv.customer
+                ? `${inv.customer.first_name} ${inv.customer.last_name}`
+                : '—'
+              const isNavigable = (
+                (inv.invoice_status === 'in_progress' && !!inv.source_quote_id) ||
+                inv.invoice_status === 'awaiting_payment' ||
+                inv.invoice_status === 'paid'
+              )
+
+              return (
+                <div key={inv.id}
+                  onClick={isNavigable ? () => router.push(`/financials/invoices/${inv.id}`) : undefined}
+                  className={`grid grid-cols-1 sm:grid-cols-[140px_1fr_110px_90px_130px_100px_100px_44px] gap-2 sm:gap-4 px-5 py-4 hover:bg-white/2 transition-colors items-center ${isNavigable ? 'cursor-pointer' : ''}`}>
+                  {/* Invoice # */}
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className={`font-mono text-xs truncate ${
+                      inv.invoice_status === 'in_progress' && inv.source_quote_id
+                        ? 'text-orange'
+                        : inv.invoice_status === 'awaiting_payment'
+                        ? 'text-purple-300'
+                        : 'text-white'
+                    }`}>
+                      {inv.invoice_number}
+                    </span>
+                    {inv.source === 'quickwrench' && (
+                      <span className="flex-shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded bg-orange/15 text-orange border border-orange/20 uppercase tracking-wide">
+                        QW
+                      </span>
+                    )}
+                    {inv.source === 'quote' && (
+                      <span className="flex-shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue/15 text-blue-light border border-blue/20 uppercase tracking-wide">
+                        QT
+                      </span>
+                    )}
+                  </div>
+                  {/* Customer */}
+                  <span className="text-white/60 text-sm truncate">{customerName}</span>
+                  {/* Date */}
+                  <span className="text-white/40 text-xs">{fmtDate(inv.invoice_date)}</span>
+                  {/* Total */}
+                  <span className="font-condensed font-bold text-white">{fmt(inv.total)}</span>
+                  {/* Status */}
+                  <InvoiceStatusBadge invoice={inv} />
+                  {/* Payment method */}
+                  <span className="text-white/40 text-xs">
+                    {inv.payment_method ? (PAYMENT_METHOD_LABELS[inv.payment_method] ?? inv.payment_method) : '—'}
+                  </span>
+                  {/* Paid date */}
+                  <span className="text-white/40 text-xs">{fmtPaidDate(inv.paid_at)}</span>
+                  {/* Actions */}
+                  <div className="relative" onClick={e => e.stopPropagation()}>
+                    <button
+                      disabled={!!actionLoading}
+                      onClick={() => setOpenMenu(openMenu === inv.id ? null : inv.id)}
+                      className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5 text-white/30 hover:text-white transition-colors disabled:opacity-40"
+                    >
+                      {actionLoading === inv.id ? (
+                        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                      ) : (
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                          <circle cx="12" cy="5" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="12" cy="19" r="1.5" />
+                        </svg>
+                      )}
+                    </button>
+
+                    {openMenu === inv.id && (
+                      <div className="absolute right-0 top-9 z-[100] w-48 bg-dark-card border border-dark-border rounded-xl shadow-xl overflow-hidden">
+                        {inv.status !== 'paid' && (
+                          <div className="border-b border-dark-border">
+                            <p className="px-3 pt-2 pb-1 text-white/30 text-xs uppercase tracking-widest">Mark as Paid</p>
+                            {PAYMENT_METHODS.map(pm => (
+                              <button key={pm.value}
+                                onClick={() => updateStatus(inv.id, 'paid', pm.value)}
+                                className="w-full text-left px-4 py-2 text-sm text-white/60 hover:text-white hover:bg-white/5 transition-colors">
+                                {pm.label}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        {inv.status !== 'overdue' && (
+                          <button onClick={() => updateStatus(inv.id, 'overdue')}
+                            className="w-full text-left px-4 py-2.5 text-sm text-danger hover:bg-danger/5 transition-colors">
+                            Mark Overdue
+                          </button>
+                        )}
+                        {inv.status === 'paid' && (
+                          <button onClick={() => updateStatus(inv.id, 'unpaid')}
+                            className="w-full text-left px-4 py-2.5 text-sm text-white/60 hover:text-white hover:bg-white/5 transition-colors">
+                            Mark Unpaid
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Close menu on outside click */}
+      {openMenu && (
+        <div className="fixed inset-0 z-[99]" onClick={() => setOpenMenu(null)} />
+      )}
+    </div>
+  )
+}
