@@ -32,3 +32,6 @@ next-env.d.ts
 # Sentry Config File
 .env.sentry-build-plugin
 .claude/settings.local.json
+
+# Supabase CLI local state
+supabase/.temp/
