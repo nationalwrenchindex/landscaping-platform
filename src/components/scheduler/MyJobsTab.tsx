@@ -5,6 +5,8 @@ import type { Job, JobStatus, Inspection } from '@/types/jobs'
 import { STATUS_CONFIG, STATUS_TRANSITIONS, formatTime, formatDateShort } from '@/lib/scheduler'
 import MultiPointInspection from '@/components/quickwrench/MultiPointInspection'
 import NavigateButton from '@/components/common/NavigateButton'
+import PropertyPhotoLog from '@/components/jobs/PropertyPhotoLog'
+import ChemicalLog from '@/components/jobs/ChemicalLog'
 
 function formatElapsed(secs: number): string {
   const h = Math.floor(secs / 3600)
@@ -578,6 +580,12 @@ function JobCard({
                 </div>
               )}
             </div>
+          )}
+
+          {/* Landscaping: before/after property photos + chemical application log */}
+          {job.status !== 'cancelled' && <PropertyPhotoLog jobId={job.id} />}
+          {job.status !== 'cancelled' && (
+            <ChemicalLog jobId={job.id} customerPhone={job.customer?.phone ?? null} />
           )}
         </div>
       )}
