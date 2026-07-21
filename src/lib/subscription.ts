@@ -20,6 +20,12 @@ export interface Subscription {
 const FOUNDER_BYPASS_ID = '4a8c046f-7db3-42bb-8422-fd47efb7678c'
 const PAID_TIERS = new Set(['full_suite', 'pro', 'starter', 'hd_elite', 'hd_pro'])
 
+// Full module set granted to comped accounts. Mirrors canAccessModule's
+// is_comped bypass (`if (sub.is_comped) return true`), which already treats any
+// comp as all-access. Keeping getModuleAccess consistent means a comp is not
+// paywalled just because its stored modules array is empty.
+const COMPED_MODULES = ['scheduler', 'intel', 'financials', 'quickwrench', 'torquewrench', 'foreman']
+
 // Checks both 'module' and 'hd_module' variants so HD subscribers pass LD gates.
 function hasModuleVariant(modules: string[], module: string): boolean {
   const bare = module.startsWith('hd_') ? module.slice(3) : module
@@ -69,7 +75,15 @@ export async function upsertSubscription(
   const { error } = await supabase
     .from('subscriptions')
     .upsert(payload, { onConflict: 'user_id' })
-  if (error) console.error('[upsertSubscription]', error)
+  if (error) {
+    // Throw rather than swallow: a silently-dropped write here is exactly how a
+    // paid subscriber ends up with no active row and gets paywalled (e.g. a tier
+    // the CHECK constraint rejected). Both callers — the Stripe webhook and
+    // provision-session — run inside a try/catch that returns 500, so Stripe
+    // retries the event instead of losing it.
+    console.error('[upsertSubscription]', error)
+    throw new Error(`upsertSubscription failed: ${error.message}`)
+  }
 }
 
 // Returns the list of module slugs this user can access.
@@ -92,6 +106,18 @@ export async function getModuleAccess(userId: string): Promise<string[]> {
       if (!modules.includes(m)) modules.push(m)
       const bare = m.startsWith('hd_') ? m.slice(3) : null
       if (bare && !modules.includes(bare)) modules.push(bare)
+    }
+
+    // Comped accounts get full module access regardless of the stored modules
+    // array. canAccessModule already returns true for any is_comped account, so
+    // this only brings getModuleAccess into line with it — a manually inserted
+    // comp row (which often leaves modules = '{}') is no longer paywalled by the
+    // scheduler/intel/financials pages. Deliberately keyed on is_comped only,
+    // NOT tier, so Stripe starter/pro keep their chosen module subset exactly.
+    if (sub.is_comped) {
+      for (const m of COMPED_MODULES) {
+        if (!modules.includes(m)) modules.push(m)
+      }
     }
 
     // Founder bypass gets all modules
