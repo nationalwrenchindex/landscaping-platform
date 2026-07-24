@@ -38,7 +38,8 @@ export interface Property {
   customer?:       Pick<Customer, 'id' | 'full_name' | 'phone' | 'email'> | null
 }
 
-export type LawnJobStatus = 'scheduled' | 'in_progress' | 'completed' | 'cancelled'
+export type LawnJobStatus =
+  | 'pending' | 'scheduled' | 'in_progress' | 'completed' | 'cancelled'
 
 export interface JobService {
   id?:          string
@@ -132,4 +133,68 @@ export interface RecurringInvoice {
   updated_at:        string
   customer?:         Pick<Customer, 'id' | 'full_name' | 'email'> | null
   property?:         Pick<Property, 'id' | 'name' | 'address'> | null
+}
+
+// ─── Chemical & fertilizer application log ──────────────────────────────────────
+
+export type ChemicalUnit   = 'oz' | 'lb' | 'gal' | 'qt'
+export type ChemicalMethod = 'spray' | 'granular' | 'liquid' | 'other'
+
+export interface ChemicalLog {
+  id:                      string
+  user_id:                 string
+  job_id:                  string | null
+  property_id:             string | null
+  customer_id:             string | null
+  product_name:            string
+  manufacturer:            string | null
+  epa_registration_number: string | null
+  application_date:        string
+  application_time:        string | null
+  target_area:             string | null
+  area_treated_sqft:       number | null
+  rate_per_1000sqft:       number | null
+  total_amount_applied:    number | null
+  unit:                    ChemicalUnit | null
+  application_method:      ChemicalMethod | null
+  wind_speed_mph:          number | null
+  temperature_f:           number | null
+  reentry_interval_hours:  number | null
+  is_organic:              boolean
+  notes:                   string | null
+  created_at:              string
+  updated_at:              string
+  property?:               Pick<Property, 'id' | 'name' | 'address'> | null
+  customer?:               Pick<Customer, 'id' | 'full_name'> | null
+}
+
+// ─── Job completion photos ──────────────────────────────────────────────────────
+
+export interface JobPhoto {
+  id:           string
+  job_id:       string
+  user_id:      string
+  storage_path: string
+  public_url:   string
+  caption:      string | null
+  taken_at:     string
+  created_at:   string
+}
+
+// ─── Automated review requests ──────────────────────────────────────────────────
+
+export type ReviewRequestStatus = 'pending' | 'sent' | 'clicked' | 'reviewed'
+
+export interface ReviewRequest {
+  id:                string
+  user_id:           string
+  customer_id:       string | null
+  job_id:            string | null
+  invoice_id:        string | null
+  phone_number:      string | null
+  status:            ReviewRequestStatus
+  sent_at:           string | null
+  clicked_at:        string | null
+  google_review_url: string | null
+  created_at:        string
 }

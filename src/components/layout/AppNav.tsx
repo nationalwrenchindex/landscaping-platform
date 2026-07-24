@@ -95,6 +95,17 @@ export default function AppNav({
       ),
     },
     {
+      href: '/chemical-log',
+      label: 'Chemical Log',
+      active: pathname.startsWith('/chemical-log'),
+      icon: (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+          <path d="M9 3h6" /><path d="M10 3v6.5L5.2 17.3A2 2 0 0 0 7 20.3h10a2 2 0 0 0 1.8-3L14 9.5V3" />
+          <line x1="8.5" y1="14" x2="15.5" y2="14" />
+        </svg>
+      ),
+    },
+    {
       href: '/field-assist',
       label: 'Field Assist',
       active: pathname === '/field-assist',

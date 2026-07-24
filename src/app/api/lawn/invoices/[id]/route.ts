@@ -6,6 +6,7 @@ import {
   normalizeLineItems,
   computeTotals,
 } from '@/lib/lawn/invoice-utils'
+import { sendReviewRequest } from '@/lib/landscaping/review-requests'
 
 // ─── GET /api/lawn/invoices/[id] ──────────────────────────────────────────────
 export async function GET(
@@ -40,7 +41,7 @@ export async function PATCH(
   }
 
   const { data: existing } = await supabase
-    .from('invoices').select('id, tax_percent').eq('id', id).eq('user_id', user.id).single()
+    .from('invoices').select('id, tax_percent, status').eq('id', id).eq('user_id', user.id).single()
   if (!existing) return NextResponse.json({ error: 'Invoice not found.' }, { status: 404 })
 
   const patch: Record<string, unknown> = {}
@@ -118,6 +119,13 @@ export async function PATCH(
   if (error) {
     console.error('[PATCH /api/lawn/invoices/[id]]', error)
     return NextResponse.json({ error: 'Could not update the invoice.' }, { status: 500 })
+  }
+
+  // When an invoice first flips to paid, fire the automated Google review text.
+  // sendReviewRequest never throws and is duplicate-safe, so awaiting it here
+  // guarantees completion without risking the payment status update.
+  if (patch.status === 'paid' && existing.status !== 'paid') {
+    await sendReviewRequest(id)
   }
 
   const { data: full } = await supabase

@@ -37,6 +37,20 @@ export async function POST(
     .slice()
     .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
 
+  // Photos from the source job ride along so the customer sees the finished work.
+  let photos: { url: string; caption: string | null }[] = []
+  if (invoice.job_id) {
+    const { data: photoRows } = await supabase
+      .from('job_photos')
+      .select('public_url, caption')
+      .eq('job_id', invoice.job_id as string)
+      .eq('user_id', user.id)
+      .order('taken_at', { ascending: true })
+    photos = (photoRows ?? []).map(p => ({
+      url: p.public_url as string, caption: (p.caption as string | null) ?? null,
+    }))
+  }
+
   const result = await sendInvoiceEmail(customer.email, {
     invoiceNumber: invoice.invoice_number as string,
     businessName:  profile?.business_name ?? profile?.full_name ?? 'Your Landscaper',
@@ -50,6 +64,7 @@ export async function POST(
     total:         Number(invoice.total)       || 0,
     dueDate:       invoice.due_date as string | null,
     notes:         invoice.notes    as string | null,
+    photos,
   })
 
   if (!result.success) {

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import type { Customer, Property, LawnJob, LawnJobStatus, JobService } from '@/types/lawn'
+import JobPhotos from './JobPhotos'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -46,6 +47,7 @@ const fmtTime = (t: string | null) => {
 
 // Status colors: blue scheduled, amber in progress, green completed
 const STATUS_META: Record<LawnJobStatus, { label: string; badge: string; bar: string }> = {
+  pending:     { label: 'Pending',     badge: 'bg-orange/20 text-orange',        bar: 'border-l-orange' },
   scheduled:   { label: 'Scheduled',   badge: 'bg-blue/20 text-blue-light',      bar: 'border-l-blue' },
   in_progress: { label: 'In Progress', badge: 'bg-amber-500/20 text-amber-400',  bar: 'border-l-amber-500' },
   completed:   { label: 'Completed',   badge: 'bg-success/20 text-success',      bar: 'border-l-success' },
@@ -53,11 +55,13 @@ const STATUS_META: Record<LawnJobStatus, { label: string; badge: string; bar: st
 }
 
 const NEXT_STATUS: Partial<Record<LawnJobStatus, LawnJobStatus>> = {
+  pending:     'scheduled',
   scheduled:   'in_progress',
   in_progress: 'completed',
 }
 
 const NEXT_STATUS_LABEL: Partial<Record<LawnJobStatus, string>> = {
+  pending:     'Confirm',
   scheduled:   'Start Job',
   in_progress: 'Complete',
 }
@@ -659,6 +663,8 @@ export default function ScheduleClient() {
                     Delete
                   </button>
                 </div>
+
+                <JobPhotos jobId={job.id} />
               </div>
             )
           })}

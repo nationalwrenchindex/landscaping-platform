@@ -29,6 +29,7 @@ export interface InvoiceEmailPayload {
   total:         number
   dueDate:       string | null
   notes:         string | null
+  photos?:       { url: string; caption: string | null }[]
 }
 
 export function renderInvoiceHtml(p: InvoiceEmailPayload): string {
@@ -72,6 +73,16 @@ export function renderInvoiceHtml(p: InvoiceEmailPayload): string {
           <td style="text-align:right;padding:8px;font-weight:700;border-top:2px solid #16a34a;color:#16a34a;">${fmtCurrency(p.total)}</td></tr>
     </table>
     ${p.notes ? `<p style="margin-top:16px;font-size:13px;color:#4b5563;white-space:pre-wrap;">${esc(p.notes)}</p>` : ''}
+    ${p.photos && p.photos.length > 0 ? `
+    <div style="margin-top:24px;">
+      <div style="font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;">Job Photos</div>
+      <table style="width:100%;border-collapse:separate;border-spacing:8px;"><tr>${
+        p.photos.map((ph, i) => `${i > 0 && i % 2 === 0 ? '</tr><tr>' : ''}<td style="width:50%;vertical-align:top;">
+          <img src="${esc(ph.url)}" alt="${esc(ph.caption ?? 'Job photo')}" style="width:100%;border-radius:8px;border:1px solid #e5e7eb;" />
+          ${ph.caption ? `<div style="font-size:11px;color:#6b7280;margin-top:4px;">${esc(ph.caption)}</div>` : ''}
+        </td>`).join('')
+      }</tr></table>
+    </div>` : ''}
     <p style="margin-top:24px;font-size:13px;color:#6b7280;">
       Thank you for your business.<br>${esc(p.businessName)}${p.businessPhone ? ` &middot; ${esc(p.businessPhone)}` : ''}
     </p>
