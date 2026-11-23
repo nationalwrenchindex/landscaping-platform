@@ -5,13 +5,16 @@
 import * as Sentry from "@sentry/nextjs";
 
 Sentry.init({
-  dsn: "https://a2ebd9a68dafc866a146734cf82e95dd@o4511403413340160.ingest.us.sentry.io/4511403500503040",
+  // DSN comes from the environment. Unset = Sentry stays inactive.
+  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+
+  // Never report from local development.
+  enabled: process.env.NODE_ENV !== "development",
   // Enable logs to be sent to Sentry
   enableLogs: true,
 
-  // Enable sending user PII (Personally Identifiable Information)
-  // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
-  sendDefaultPii: true,
+  // Do NOT attach user PII (IP addresses, cookies, user info) to events.
+  sendDefaultPii: false,
 });
 
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;

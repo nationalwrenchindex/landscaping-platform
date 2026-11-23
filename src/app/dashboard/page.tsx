@@ -1,3 +1,4 @@
+import { isFounder } from '@/lib/founder'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
@@ -739,7 +740,7 @@ export default async function DashboardPage({
                 </Link>
               )
             })}
-            {user.id === '4a8c046f-7db3-42bb-8422-fd47efb7678c' && (
+            {isFounder(user.id) && (
               <Link href="/social"
                 className="nwi-card flex items-start gap-3 transition-colors group hover:border-orange/40 hover:bg-orange/5">
                 <div className="w-9 h-9 rounded-xl border flex items-center justify-center flex-shrink-0 transition-colors bg-orange/10 border-orange/20 text-orange">

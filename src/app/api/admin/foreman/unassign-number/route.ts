@@ -3,10 +3,10 @@
 // Required for numbers provisioned before the multi-tenancy fix.
 // Founder-only access.
 
+import { isFounder } from '@/lib/founder'
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
-const FOUNDER_ID   = '4a8c046f-7db3-42bb-8422-fd47efb7678c'
 const VAPI_BASE    = 'https://api.vapi.ai'
 const SERVER_URL   = 'https://tools.nationalwrenchindex.com/api/webhooks/vapi'
 
@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
   // Auth: founder only
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user || user.id !== FOUNDER_ID) {
+  if (!user || !isFounder(user.id)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

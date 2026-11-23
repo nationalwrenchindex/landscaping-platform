@@ -1,3 +1,4 @@
+import { isFounder } from '@/lib/founder'
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
@@ -7,7 +8,6 @@ import { revalidatePath } from 'next/cache'
 // Actions: update (correct result_html), delete (drop a bad entry), promote
 // (insert a reviewed entry into the verified hd_alarm_codes table, then remove
 // the cached row). All writes use the service-role client.
-const FOUNDER_ID = '4a8c046f-7db3-42bb-8422-fd47efb7678c'
 
 const SEVERITIES = ['immediate', 'check', 'maintenance', 'info']
 
@@ -23,7 +23,7 @@ const asNum = (v: unknown): number | null => {
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user || user.id !== FOUNDER_ID) {
+  if (!user || !isFounder(user.id)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 

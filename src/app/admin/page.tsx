@@ -1,3 +1,4 @@
+import { isFounder } from '@/lib/founder'
 import { notFound } from 'next/navigation'
 import { unstable_cache } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
@@ -10,7 +11,6 @@ import { PLANS, TIER_MODULES } from '@/lib/stripe-plans'
 import type { PlanTier } from '@/lib/stripe-plans'
 import { FOREMAN_SUBSCRIBER_CAP } from '@/lib/foreman/config'
 
-const FOUNDER_ID = '4a8c046f-7db3-42bb-8422-fd47efb7678c'
 
 export const metadata = { title: 'Admin — LawnPlatform' }
 
@@ -165,7 +165,7 @@ export default async function AdminPage() {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user || user.id !== FOUNDER_ID) return notFound()
+  if (!user || !isFounder(user.id)) return notFound()
 
   const { profiles, subscriptions, foremanCount, waitlistCount } = await getAdminData()
 
@@ -180,7 +180,7 @@ export default async function AdminPage() {
 
   const subMap = new Map(subscriptions.map(s => [s.user_id, s]))
 
-  const nonFounderProfiles = profiles.filter(p => p.id !== FOUNDER_ID)
+  const nonFounderProfiles = profiles.filter(p => !isFounder(p.id))
 
   const activePaying = subscriptions.filter(
     s => s.status === 'active' && s.stripe_subscription_id,

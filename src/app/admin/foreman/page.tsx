@@ -1,3 +1,4 @@
+import { isFounder } from '@/lib/founder'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
@@ -5,7 +6,6 @@ import AppNav from '@/components/layout/AppNav'
 import { FOREMAN_SUBSCRIBER_CAP } from '@/lib/foreman/config'
 import { getCurrentForemanSubscriberCount } from '@/lib/foreman/cap'
 
-const FOUNDER_ID = '4a8c046f-7db3-42bb-8422-fd47efb7678c'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Foreman Admin — LawnPlatform' }
@@ -51,7 +51,7 @@ type WaitlistEntry = {
 export default async function AdminForemanPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user || user.id !== FOUNDER_ID) return notFound()
+  if (!user || !isFounder(user.id)) return notFound()
 
   const svc = createServiceClient()
 
@@ -60,7 +60,7 @@ export default async function AdminForemanPage() {
   // would show them correctly but they'd have no settings row to configure.
   await svc
     .from('foreman_settings')
-    .upsert({ user_id: FOUNDER_ID }, { onConflict: 'user_id', ignoreDuplicates: true })
+    .upsert({ user_id: user.id }, { onConflict: 'user_id', ignoreDuplicates: true })
 
   const [
     foremanCount,

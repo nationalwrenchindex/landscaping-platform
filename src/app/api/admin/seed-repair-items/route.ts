@@ -1,9 +1,9 @@
+import { isFounder } from '@/lib/founder'
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { MASTER_REPAIR_ITEMS } from '@/lib/hd/repair-items-seed'
 
-const FOUNDER_ID = '4a8c046f-7db3-42bb-8422-fd47efb7678c'
 
 // Founder-gated, idempotent seed of the master repair-items catalog. Each item
 // is upserted on (description, applies_to) so re-running only refreshes values —
@@ -11,7 +11,7 @@ const FOUNDER_ID = '4a8c046f-7db3-42bb-8422-fd47efb7678c'
 export async function POST() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user || user.id !== FOUNDER_ID) {
+  if (!user || !isFounder(user.id)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 

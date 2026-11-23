@@ -18,7 +18,6 @@ const QUOTE_SELECT = `
   sent_at, approved_at, declined_at, quote_expires_at,
   customer_response_note,
   customer:customers(id, first_name, last_name, phone),
-  vehicle:vehicles(id, year, make, model, vin),
   user_id
 `
 
@@ -66,10 +65,6 @@ export default async function PublicQuotePage(
   const customerName = q.customer
     ? `${q.customer.first_name ?? ''} ${q.customer.last_name ?? ''}`.trim()
     : 'Valued Customer'
-
-  const vehicleLabel = q.vehicle
-    ? [q.vehicle.year, q.vehicle.make, q.vehicle.model].filter(Boolean).join(' ')
-    : null
 
   const fmt = (n: number | null | undefined) =>
     n == null ? '$0.00' : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n)
@@ -127,17 +122,6 @@ export default async function PublicQuotePage(
           <h1 className="font-bold text-2xl text-white tracking-tight">Hello, {customerName}</h1>
           <p className="text-white/50 text-sm">{bizName} has sent you a service quote.</p>
         </div>
-
-        {/* Vehicle */}
-        {vehicleLabel && (
-          <div className="bg-white/5 rounded-xl px-4 py-3 space-y-0.5">
-            <p className="text-white/40 text-xs uppercase tracking-widest">Vehicle</p>
-            <p className="text-white font-medium">{vehicleLabel}</p>
-            {q.vehicle?.vin && (
-              <p className="text-white/30 text-xs font-mono">VIN: {q.vehicle.vin}</p>
-            )}
-          </div>
-        )}
 
         {/* Service label */}
         {isMultiJob ? (
@@ -348,10 +332,6 @@ export default async function PublicQuotePage(
             </a>
           </p>
         )}
-
-        <p className="text-center text-white/15 text-xs pb-4">
-          Powered by National Wrench Index
-        </p>
 
       </div>
     </div>

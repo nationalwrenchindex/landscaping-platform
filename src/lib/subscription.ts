@@ -1,3 +1,4 @@
+import { isFounder } from '@/lib/founder'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 
@@ -17,7 +18,6 @@ export interface Subscription {
 
 // ─── Module access helpers ─────────────────────────────────────────────────────
 
-const FOUNDER_BYPASS_ID = '4a8c046f-7db3-42bb-8422-fd47efb7678c'
 const PAID_TIERS = new Set(['full_suite', 'pro', 'starter', 'hd_elite', 'hd_pro'])
 
 // Full module set granted to comped accounts. Mirrors canAccessModule's
@@ -40,7 +40,7 @@ function hasModuleVariant(modules: string[], module: string): boolean {
 //   3. tier in PAID_TIERS
 //   4. modules array includes bare OR hd_ variant of the module slug
 export async function canAccessModule(userId: string, module: string): Promise<boolean> {
-  if (userId === FOUNDER_BYPASS_ID) return true
+  if (isFounder(userId)) return true
   const supabase = await createClient()
   const { data: sub } = await supabase
     .from('subscriptions')
@@ -121,7 +121,7 @@ export async function getModuleAccess(userId: string): Promise<string[]> {
     }
 
     // Founder bypass gets all modules
-    if (userId === FOUNDER_BYPASS_ID && !modules.includes('quickwrench')) {
+    if (isFounder(userId) && !modules.includes('quickwrench')) {
       modules.push('quickwrench', 'foreman', 'torquewrench', 'scheduler')
     }
   }
