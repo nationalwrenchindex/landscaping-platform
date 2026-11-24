@@ -93,6 +93,20 @@ export async function GET(request: NextRequest) {
       review_link:         reviewLink,
     })
 
+    // Claim the row before sending: only a run that flips send_attempted_at
+    // from NULL gets to text, so two overlapping cron runs cannot both send.
+    const { data: claimed } = await supabase
+      .from('torquewrench_reviews')
+      .update({ send_attempted_at: new Date().toISOString() })
+      .eq('id', review.id)
+      .eq('status', 'pending')
+      .is('send_attempted_at', null)
+      .select('id')
+    if (!claimed || claimed.length === 0) {
+      skipped++
+      continue
+    }
+
     const result   = await sendSmsResult({ to: review.customer_phone as string, body })
     const attempts = ((review.send_attempts as number) ?? 0) + 1
 
@@ -105,11 +119,16 @@ export async function GET(request: NextRequest) {
       console.log(`[tw-cron] Sent review SMS for ${review.id}`)
       sent++
     } else {
-      // Don't update send_attempted_at — allows retry next cron run
+      // Release the claim (send_attempted_at back to NULL) so the next cron
+      // run retries, up to 3 attempts.
       const newStatus = attempts >= 3 ? 'failed' : 'pending'
       await supabase
         .from('torquewrench_reviews')
-        .update({ send_attempts: attempts, ...(newStatus === 'failed' ? { status: 'failed' } : {}) })
+        .update({
+          send_attempts:     attempts,
+          send_attempted_at: null,
+          ...(newStatus === 'failed' ? { status: 'failed' } : {}),
+        })
         .eq('id', review.id)
 
       console.error(

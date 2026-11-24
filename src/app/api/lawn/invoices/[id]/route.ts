@@ -113,18 +113,37 @@ export async function PATCH(
     patch.total      = totals.total
   }
 
-  const { error } = await supabase
-    .from('invoices').update(patch).eq('id', id).eq('user_id', user.id)
+  // A flip to paid is applied only if the row is not ALREADY paid, so when two
+  // requests race (double-click, retry) exactly one of them wins the flip and
+  // only that one triggers the review text.
+  const flippingToPaid = patch.status === 'paid' && existing.status !== 'paid'
+
+  let update = supabase.from('invoices').update(patch).eq('id', id).eq('user_id', user.id)
+  if (flippingToPaid) update = update.neq('status', 'paid')
+  const { data: updatedRows, error } = await update.select('id')
+
+  const wonPaidFlip = flippingToPaid && (updatedRows?.length ?? 0) > 0
+
+  if (!error && flippingToPaid && !wonPaidFlip) {
+    // Another request marked it paid first. Apply the rest of this edit without
+    // touching status / paid_at, and do not send a second review.
+    const { status: _status, paid_at: _paidAt, ...rest } = patch
+    void _status; void _paidAt
+    if (Object.keys(rest).length > 0) {
+      await supabase.from('invoices').update(rest).eq('id', id).eq('user_id', user.id)
+    }
+  }
 
   if (error) {
     console.error('[PATCH /api/lawn/invoices/[id]]', error)
     return NextResponse.json({ error: 'Could not update the invoice.' }, { status: 500 })
   }
 
-  // When an invoice first flips to paid, fire the automated Google review text.
-  // sendReviewRequest never throws and is duplicate-safe, so awaiting it here
-  // guarantees completion without risking the payment status update.
-  if (patch.status === 'paid' && existing.status !== 'paid') {
+  // When an invoice first flips to paid, fire the review: TorqueWrench if it is
+  // active for this business, otherwise the simple Google-link text. Exactly
+  // one, never two (see lib/landscaping/review-requests.ts). It never throws,
+  // so awaiting it cannot roll back the payment status update.
+  if (wonPaidFlip) {
     await sendReviewRequest(id)
   }
 

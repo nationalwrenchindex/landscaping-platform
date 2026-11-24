@@ -1,17 +1,34 @@
 // Automated Google review requests — the landscaping equivalent of NWI's
 // TorqueWrench. When an invoice is marked paid, sendReviewRequest() texts the
 // customer a thank-you with the business's Google review link and logs the send
-// to review_requests. It is duplicate-safe: an invoice never texts twice.
+// to review_requests.
+//
+// EXACTLY ONE review text per paid invoice / job:
+//   - If TorqueWrench can deliver for this business, the review is handed to
+//     TorqueWrench (queued via lib/torquewrench/enqueue.ts) and this simple
+//     sender does not text.
+//   - Otherwise this sender texts once. It claims the invoice in
+//     review_requests (unique on invoice_id) BEFORE texting, so two concurrent
+//     calls cannot both send.
+//   - Neither path fires if either table already has a review for this
+//     invoice or this job.
 //
 // Never throws — the caller (the invoice PATCH route) must not have a review
 // text failure roll back the payment status change.
 
 import { createServiceClient } from '@/lib/supabase/service'
 import { sendSmsResult } from '@/lib/twilio'
+import {
+  enqueueTorqueWrenchReview,
+  isTorqueWrenchDelivering,
+  reviewAlreadyHandled,
+} from '@/lib/torquewrench/enqueue'
 
 export interface ReviewRequestResult {
   sent:    boolean
   skipped?: boolean
+  /** The review was handed to TorqueWrench, which texts it from its cron. */
+  queuedTorqueWrench?: boolean
   reason?: string
 }
 
@@ -36,47 +53,21 @@ export async function sendReviewRequest(invoiceId: string): Promise<ReviewReques
 
     if (!invoice) return { sent: false, reason: 'Invoice not found.' }
 
-    // ── No duplicates: bail if this invoice already has a request ──
-    const { data: existing } = await supabase
-      .from('review_requests')
-      .select('id')
-      .eq('invoice_id', invoiceId)
-      .maybeSingle()
-
-    if (existing) return { sent: false, skipped: true, reason: 'Review request already sent.' }
-
-    // ── One review text per customer per job, never two ──
-    // TorqueWrench is a second review pipeline. Where it is ACTIVE for this
-    // business it wins and this sender stands down. "Active" is the exact
-    // condition TorqueWrench uses to queue a review (api/invoices/[id]/route.ts):
-    // profiles.torquewrench_addon_active AND torquewrench_settings.is_enabled.
-    const { data: twProfile } = await supabase
-      .from('profiles')
-      .select('torquewrench_addon_active')
-      .eq('id', invoice.user_id)
-      .single()
-    if (twProfile?.torquewrench_addon_active) {
-      const { data: twSettings } = await supabase
-        .from('torquewrench_settings')
-        .select('is_enabled')
-        .eq('user_id', invoice.user_id)
-        .maybeSingle()
-      if (twSettings?.is_enabled) {
-        return { sent: false, skipped: true, reason: 'TorqueWrench is active for this business; it handles review requests.' }
-      }
+    // ── Never twice: either sender already has this invoice or this job ──
+    if (await reviewAlreadyHandled(supabase, { invoiceId: invoice.id, jobId: invoice.job_id })) {
+      return { sent: false, skipped: true, reason: 'Review request already sent for this invoice or job.' }
     }
 
-    // Per job: if this job already got a review text from EITHER sender (another
-    // invoice for the same job, or TorqueWrench before it was switched off),
-    // do not send another.
-    if (invoice.job_id) {
-      const [{ data: jobSimple }, { data: jobTw }] = await Promise.all([
-        supabase.from('review_requests').select('id').eq('job_id', invoice.job_id).limit(1),
-        supabase.from('torquewrench_reviews').select('id').eq('job_id', invoice.job_id).limit(1),
-      ])
-      if ((jobSimple?.length ?? 0) > 0 || (jobTw?.length ?? 0) > 0) {
-        return { sent: false, skipped: true, reason: 'This job already has a review request.' }
-      }
+    // ── TorqueWrench owns the review where it can deliver ──
+    if (await isTorqueWrenchDelivering(supabase, invoice.user_id)) {
+      const tw = await enqueueTorqueWrenchReview(supabase, {
+        userId:     invoice.user_id,
+        invoiceId:  invoice.id,
+        jobId:      invoice.job_id,
+        customerId: invoice.customer_id,
+      })
+      if (tw.queued) return { sent: false, queuedTorqueWrench: true }
+      return { sent: false, skipped: true, reason: tw.reason }
     }
 
     // ── Customer phone ──
@@ -113,14 +104,9 @@ export async function sendReviewRequest(invoiceId: string): Promise<ReviewReques
       `property today. If we did a great job we would love a quick Google review: ${googleUrl} ` +
       `— Reply STOP to opt out`
 
-    const result = await sendSmsResult({ to: phone, body })
-
-    if (!result.success) {
-      return { sent: false, reason: result.error ?? 'SMS send failed.' }
-    }
-
-    // ── Log the request (unique index also guards against races) ──
-    const { error: logErr } = await supabase
+    // ── Claim this invoice first (unique index on invoice_id) so a concurrent
+    //    call cannot also text. The loser gets 23505 and stops. ──
+    const { data: claim, error: claimErr } = await supabase
       .from('review_requests')
       .insert({
         user_id:           invoice.user_id,
@@ -128,14 +114,36 @@ export async function sendReviewRequest(invoiceId: string): Promise<ReviewReques
         job_id:            invoice.job_id,
         invoice_id:        invoice.id,
         phone_number:      phone,
-        status:            'sent',
-        sent_at:           new Date().toISOString(),
+        status:            'pending',
         google_review_url: googleUrl,
       })
+      .select('id')
+      .single()
+
+    if (claimErr || !claim) {
+      if (claimErr?.code === '23505') {
+        return { sent: false, skipped: true, reason: 'Review request already sent.' }
+      }
+      console.error('[review-requests] claim insert error:', claimErr?.message)
+      return { sent: false, reason: 'Could not record the review request.' }
+    }
+
+    const result = await sendSmsResult({ to: phone, body })
+
+    if (!result.success) {
+      // Release the claim so a later paid transition can retry.
+      await supabase.from('review_requests').delete().eq('id', claim.id)
+      return { sent: false, reason: result.error ?? 'SMS send failed.' }
+    }
+
+    const { error: logErr } = await supabase
+      .from('review_requests')
+      .update({ status: 'sent', sent_at: new Date().toISOString() })
+      .eq('id', claim.id)
 
     if (logErr) {
-      console.error('[review-requests] log insert error:', logErr.message)
-      // The text already went out — report success even though logging failed.
+      console.error('[review-requests] log update error:', logErr.message)
+      // The text already went out and the claim row blocks a resend.
     }
 
     return { sent: true }
