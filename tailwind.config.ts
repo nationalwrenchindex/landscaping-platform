@@ -9,7 +9,7 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // LawnPlatform brand palette. The historical `orange` (primary) and
+        // National Pro Index brand palette. The historical `orange` (primary) and
         // `blue` (secondary) token names are retained so the ~30 existing
         // components that reference them recolor to green with zero churn.
         // Original NWI values: orange #FF6600 / blue #2969B0.

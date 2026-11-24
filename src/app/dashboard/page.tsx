@@ -1,4 +1,5 @@
 import { isFounder } from '@/lib/founder'
+import { QUICKWRENCH_ENABLED, SOCIAL_ENABLED, DASHBOARD_VEHICLE_ALERTS_ENABLED } from '@/lib/features'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
@@ -361,7 +362,8 @@ export default async function DashboardPage({
   // ── Service alerts (two-step: need customer IDs first) ──
   let topAlerts: TopAlert[] = []
   const customerIds = (customersForAlerts ?? []).map(c => c.id)
-  if (customerIds.length > 0) {
+  // Vehicle-based alerts are hidden for NPI (lib/features.ts); skip the query too.
+  if (DASHBOARD_VEHICLE_ALERTS_ENABLED && customerIds.length > 0) {
     const { data: vehiclesRaw } = await supabase
       .from('vehicles')
       .select(`id, customer_id, year, make, model, mileage,
@@ -544,7 +546,7 @@ export default async function DashboardPage({
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
           {/* Today's schedule */}
-          <div className="lg:col-span-2">
+          <div className={DASHBOARD_VEHICLE_ALERTS_ENABLED ? 'lg:col-span-2' : 'lg:col-span-3'}>
             <div className="nwi-card h-full">
               <div className="flex items-center justify-between mb-4 pb-4 border-b border-dark-border">
                 <div>
@@ -589,8 +591,8 @@ export default async function DashboardPage({
             </div>
           </div>
 
-          {/* Service alerts */}
-          <div>
+          {/* Service alerts - vehicle-based, hidden for NPI (lib/features.ts) */}
+          {DASHBOARD_VEHICLE_ALERTS_ENABLED && (<div>
             <div className="nwi-card h-full">
               <div className="flex items-center justify-between mb-4 pb-4 border-b border-dark-border">
                 <div>
@@ -623,7 +625,7 @@ export default async function DashboardPage({
                 </div>
               )}
             </div>
-          </div>
+          </div>)}
         </div>
 
         {/* ── Outstanding invoices ── */}
@@ -668,7 +670,7 @@ export default async function DashboardPage({
         <div>
           <p className="text-white/30 text-xs uppercase tracking-widest mb-3">Quick Access</p>
           <div className={`grid gap-3 ${businessType === 'detailer' ? 'grid-cols-2 lg:grid-cols-5' : 'grid-cols-2 lg:grid-cols-3'}`}>
-            {businessType !== 'detailer' && (
+            {QUICKWRENCH_ENABLED && businessType !== 'detailer' && (
               <DashboardQuickWrenchCard
                 hasAccess={hasQW}
                 autoOpen={sp?.upsell === '1'}
@@ -720,7 +722,7 @@ export default async function DashboardPage({
                 </Link>
               )
             })}
-            {isFounder(user.id) && (
+            {SOCIAL_ENABLED && isFounder(user.id) && (
               <Link href="/social"
                 className="nwi-card flex items-start gap-3 transition-colors group hover:border-orange/40 hover:bg-orange/5">
                 <div className="w-9 h-9 rounded-xl border flex items-center justify-center flex-shrink-0 transition-colors bg-orange/10 border-orange/20 text-orange">

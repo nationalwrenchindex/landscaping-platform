@@ -1,6 +1,6 @@
 import { Resend } from 'resend'
 
-const FROM = 'LawnPlatform Alerts <onboarding@resend.dev>'
+const FROM = 'National Pro Index Alerts <onboarding@resend.dev>'
 
 async function getResend(): Promise<Resend | null> {
   const apiKey = process.env.RESEND_API_KEY

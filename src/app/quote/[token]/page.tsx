@@ -31,7 +31,7 @@ export async function generateMetadata(
   const sc = createServiceClient()
   const { data } = await sc.from('quotes').select('quote_number').eq('public_token', token).single()
   const num = data?.quote_number ?? 'Quote'
-  return { title: `${num} — LawnPlatform` }
+  return { title: `${num} — National Pro Index` }
 }
 
 export default async function PublicQuotePage(

@@ -186,16 +186,16 @@ export default function AppNav({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center gap-4 h-16 sm:h-14">
         {/* Logo */}
         <Link href="/dashboard" className="flex-shrink-0 flex items-center gap-2">
-          {/* Temporary LP wordmark — replace with logo image when brand is confirmed */}
+          {/* Temporary NPI wordmark — replace with logo image when brand is confirmed */}
           <span
             className="flex items-center justify-center h-10 w-10 rounded-lg font-condensed font-extrabold text-lg text-white"
             style={{ backgroundColor: '#16a34a' }}
           >
-            LP
+            NPI
           </span>
           <span className="hidden md:flex flex-col leading-tight whitespace-nowrap">
             <span className="font-condensed font-bold text-sm" style={{ color: '#16a34a' }}>
-              LawnPlatform
+              National Pro Index
             </span>
             <span className="text-[10px] text-white/50">Built for lawn and landscape pros</span>
           </span>

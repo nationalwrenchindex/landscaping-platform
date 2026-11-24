@@ -33,7 +33,7 @@ export async function generateMetadata(
   const sc = createServiceClient()
   const { data } = await sc.from('invoices').select('invoice_number').eq('public_token', token).single()
   const num = data?.invoice_number ?? 'Invoice'
-  return { title: `${num} — LawnPlatform` }
+  return { title: `${num} — National Pro Index` }
 }
 
 const fmt = (n: number | null | undefined) =>

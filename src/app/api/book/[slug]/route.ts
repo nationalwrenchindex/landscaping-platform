@@ -49,7 +49,7 @@ function buildBookingSmsBody({
     `${fmtNotifDate(jobDate)} at ${fmtNotifTime(jobTime)}`,
   ]
   if (customerPhone) parts.push(customerPhone)
-  return parts.join(' · ') + ' — LawnPlatform'
+  return parts.join(' · ') + ' — National Pro Index'
 }
 
 // Configurable defaults — can be moved to a per-tech profile field later

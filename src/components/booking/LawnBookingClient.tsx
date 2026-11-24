@@ -233,7 +233,7 @@ export default function LawnBookingClient({
           )}
 
           <p className="mt-6 text-center text-xs text-gray-400">
-            Powered by LawnPlatform
+            Powered by National Pro Index
           </p>
         </div>
       </main>

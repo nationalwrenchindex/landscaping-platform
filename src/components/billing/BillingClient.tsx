@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import type { Subscription } from '@/lib/subscription'
+import { QUICKWRENCH_ENABLED } from '@/lib/features'
 import {
   MODULE_LABELS,
   MODULE_DESCRIPTIONS,
@@ -480,7 +481,7 @@ export default function BillingClient({
   // Handle redirect-back from Stripe
   useEffect(() => {
     if (searchParams.get('success') === 'true') {
-      setToast({ type: 'success', msg: 'Subscription activated! Welcome to LawnPlatform.' })
+      setToast({ type: 'success', msg: 'Subscription activated! Welcome to National Pro Index.' })
     } else if (searchParams.get('canceled') === 'true') {
       setToast({ type: 'error', msg: 'Checkout was cancelled. No charge was made.' })
     }
@@ -607,7 +608,7 @@ export default function BillingClient({
         </h1>
         {!isActive && !isForemanOnly && (
           <p className="text-white/40 text-sm mt-1">
-            Subscribe to unlock LawnPlatform modules for your business.
+            Subscribe to unlock National Pro Index modules for your business.
           </p>
         )}
       </div>
@@ -688,8 +689,8 @@ export default function BillingClient({
             )}
           </div>
 
-          {/* LawnPlatform Plans */}
-          <p className="text-white/30 text-[11px] uppercase tracking-widest mb-3">LawnPlatform Plans</p>
+          {/* National Pro Index Plans */}
+          <p className="text-white/30 text-[11px] uppercase tracking-widest mb-3">National Pro Index Plans</p>
 
           {/* Row 1: Starter, Pro, Full Suite */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-5">
@@ -724,7 +725,7 @@ export default function BillingClient({
             </p>
             <p className="text-white/30 text-sm mb-5">Add just the tool you need.</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {plans.filter(p => ['foreman_standalone', 'quickwrench'].includes(p.tier)).map(plan => (
+              {plans.filter(p => p.tier === 'foreman_standalone' || (QUICKWRENCH_ENABLED && p.tier === 'quickwrench')).map(plan => (
                 <PlanCard
                   key={plan.tier}
                   plan={plan}

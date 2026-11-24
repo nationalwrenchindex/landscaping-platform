@@ -109,13 +109,39 @@ export default function PrivacyPage() {
                 authentication infrastructure
               </li>
               <li>
-                <strong className="text-white">Anthropic</strong> — AI inference for
-                QuickWrench&#8482; VIN-to-quote and repair specification features
+                <strong className="text-white">Anthropic</strong> — AI inference for data import
+                column mapping, vehicle diagnostic and quote tools (QuickWrench&#8482;), and
+                marketing content generation
+              </li>
+              <li>
+                <strong className="text-white">Google (Gemini)</strong> — AI image and text analysis
+                for Field Assist (plant, lawn, disease and pest identification and quick estimates)
+              </li>
+              <li>
+                <strong className="text-white">OpenAI</strong> — AI image generation for marketing
+                content
+              </li>
+              <li>
+                <strong className="text-white">Resend</strong> — email delivery for invoices, booking
+                confirmations, and account notifications
+              </li>
+              <li>
+                <strong className="text-white">Vapi</strong> — AI phone receptionist (Foreman) call
+                handling
+              </li>
+              <li>
+                <strong className="text-white">Sentry</strong> — application error monitoring
+              </li>
+              <li>
+                <strong className="text-white">Roadie</strong> — parts delivery dispatch
+              </li>
+              <li>
+                <strong className="text-white">Vercel</strong> — application hosting
               </li>
             </ul>
             <p>
-              We do not share your data with any other third parties. We do not sell, rent, or
-              trade personal information to data brokers, advertisers, or any other entities.
+              We do not sell, rent, or trade personal information to data brokers, advertisers, or
+              any other entities.
             </p>
           </Section>
 
@@ -255,9 +281,9 @@ function LegalNav() {
     <header className="border-b border-dark-border bg-dark-card">
       <div className="max-w-3xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
         <Link href="/login" className="flex items-center gap-3 group">
-          <span className="flex items-center justify-center h-9 w-9 rounded-lg font-condensed font-extrabold text-white" style={{ backgroundColor: "#16a34a" }}>LP</span>
+          <span className="flex items-center justify-center h-9 w-9 rounded-lg font-condensed font-extrabold text-white text-sm" style={{ backgroundColor: "#16a34a" }}>NPI</span>
           <span className="hidden sm:block font-condensed font-bold text-sm leading-tight">
-            <span style={{ color: "#16a34a" }}>LawnPlatform</span>
+            <span style={{ color: "#16a34a" }}>National Pro Index</span>
             <span className="text-white/70">&#8482;</span>
           </span>
         </Link>

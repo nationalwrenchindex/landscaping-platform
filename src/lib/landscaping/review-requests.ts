@@ -45,6 +45,40 @@ export async function sendReviewRequest(invoiceId: string): Promise<ReviewReques
 
     if (existing) return { sent: false, skipped: true, reason: 'Review request already sent.' }
 
+    // ── One review text per customer per job, never two ──
+    // TorqueWrench is a second review pipeline. Where it is ACTIVE for this
+    // business it wins and this sender stands down. "Active" is the exact
+    // condition TorqueWrench uses to queue a review (api/invoices/[id]/route.ts):
+    // profiles.torquewrench_addon_active AND torquewrench_settings.is_enabled.
+    const { data: twProfile } = await supabase
+      .from('profiles')
+      .select('torquewrench_addon_active')
+      .eq('id', invoice.user_id)
+      .single()
+    if (twProfile?.torquewrench_addon_active) {
+      const { data: twSettings } = await supabase
+        .from('torquewrench_settings')
+        .select('is_enabled')
+        .eq('user_id', invoice.user_id)
+        .maybeSingle()
+      if (twSettings?.is_enabled) {
+        return { sent: false, skipped: true, reason: 'TorqueWrench is active for this business; it handles review requests.' }
+      }
+    }
+
+    // Per job: if this job already got a review text from EITHER sender (another
+    // invoice for the same job, or TorqueWrench before it was switched off),
+    // do not send another.
+    if (invoice.job_id) {
+      const [{ data: jobSimple }, { data: jobTw }] = await Promise.all([
+        supabase.from('review_requests').select('id').eq('job_id', invoice.job_id).limit(1),
+        supabase.from('torquewrench_reviews').select('id').eq('job_id', invoice.job_id).limit(1),
+      ])
+      if ((jobSimple?.length ?? 0) > 0 || (jobTw?.length ?? 0) > 0) {
+        return { sent: false, skipped: true, reason: 'This job already has a review request.' }
+      }
+    }
+
     // ── Customer phone ──
     if (!invoice.customer_id) return { sent: false, reason: 'Invoice has no customer.' }
 

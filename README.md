@@ -1,14 +1,15 @@
-# LawnPlatform (working name: `lawn-platform-dev`)
+# National Pro Index (NPI)
 
 Business-management platform for independent mobile landscapers — jobs, customers,
 quotes, invoices, a public booking page, an AI phone receptionist (Foreman), review
 automation (TorqueWrench), and **Field Assist** (AI plant/lawn/pest diagnosis + quick
 estimates).
 
-Ported from the NWI Suite LD codebase into a **fully standalone repo**. The name
-`LawnPlatform` / `LP` is temporary and will change when the brand is confirmed.
+National Pro Index (NPI) serves home and commercial trades; landscaping is the first.
+Ported from the NWI Suite LD codebase into a **fully standalone repo**. NPI and
+National Wrench Index are both owned by National Service Technologies.
 
-> Powered by National Wrench Index LLC.
+> Powered by National Pro Index.
 
 ## Stack
 

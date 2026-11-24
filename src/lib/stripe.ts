@@ -10,11 +10,32 @@ export type { PlanTier } from '@/lib/stripe-plans'
 // Singleton — re-use across hot reloads in dev
 const globalForStripe = globalThis as unknown as { stripe?: Stripe }
 
-export const stripe =
-  globalForStripe.stripe ??
-  new Stripe(process.env.STRIPE_SECRET_KEY!)
+/**
+ * Lazily constructs the Stripe client on first use, NOT at module load.
+ * Constructing at import time made `next build` crash (while collecting page
+ * data) on any machine without STRIPE_SECRET_KEY. A missing key now fails only
+ * when a Stripe call is actually made, with a clear message.
+ */
+export function getStripe(): Stripe {
+  if (globalForStripe.stripe) return globalForStripe.stripe
+  const key = process.env.STRIPE_SECRET_KEY
+  if (!key) throw new Error('STRIPE_SECRET_KEY is not set')
+  const client = new Stripe(key)
+  globalForStripe.stripe = client
+  return client
+}
 
-if (process.env.NODE_ENV !== 'production') globalForStripe.stripe = stripe
+/**
+ * Back-compat handle for existing `import { stripe } from '@/lib/stripe'`
+ * call sites. Every property access is forwarded to the lazily built client.
+ */
+export const stripe: Stripe = new Proxy({} as Stripe, {
+  get(_target, prop) {
+    const client = getStripe()
+    const value = Reflect.get(client, prop, client)
+    return typeof value === 'function' ? value.bind(client) : value
+  },
+})
 
 export function getPriceId(tier: PlanTier): string {
   const plan = PLANS.find(p => p.tier === tier)

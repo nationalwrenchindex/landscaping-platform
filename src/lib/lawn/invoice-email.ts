@@ -1,7 +1,7 @@
 import { Resend } from 'resend'
 import type { InvoiceLineItem } from '@/types/lawn'
 
-const FROM = 'LawnPlatform Invoices <onboarding@resend.dev>'
+const FROM = 'National Pro Index Invoices <onboarding@resend.dev>'
 
 export const fmtCurrency = (n: number | null | undefined): string =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(n) || 0)

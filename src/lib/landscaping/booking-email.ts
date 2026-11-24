@@ -1,6 +1,6 @@
 import { Resend } from 'resend'
 
-const FROM = 'LawnPlatform Bookings <onboarding@resend.dev>'
+const FROM = 'National Pro Index Bookings <onboarding@resend.dev>'
 
 const esc = (s: string): string =>
   s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] ?? c))

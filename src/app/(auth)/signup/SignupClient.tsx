@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { PLANS, SELECTABLE_MODULES, MODULE_LABELS, MODULE_DESCRIPTIONS } from '@/lib/stripe-plans'
 import type { PlanTier, SelectableModule } from '@/lib/stripe-plans'
+import { QUICKWRENCH_ENABLED } from '@/lib/features'
 
 type SignupPlan = PlanTier | 'foreman'
 type ProfessionType = 'mobile_mechanic' | 'other'
@@ -31,7 +32,7 @@ const FOREMAN_FEATURES = [
   'Asks engine size (mechanic-specific)',
   'Customer + mechanic SMS notifications',
   'Free Scheduler included',
-  'Upgrade to add invoicing, QuickWrench, more',
+  'Upgrade to add invoicing and more',
 ]
 
 const CheckMark = () => (
@@ -208,7 +209,7 @@ export default function SignupClient({ foremanAvailable }: Props) {
         </h1>
         <p className="text-white/50 text-sm">
           Join lawn and landscape pros on the{' '}
-          <span style={{ color: '#16a34a' }}>LawnPlatform</span>{' '}
+          <span style={{ color: '#16a34a' }}>National Pro Index</span>{' '}
           platform.
         </p>
       </div>
@@ -474,7 +475,7 @@ export default function SignupClient({ foremanAvailable }: Props) {
             </div>
 
             {/* ── Standalone cards: Foreman + QuickWrench side by side ── */}
-            <div className="grid grid-cols-2 gap-2">
+            <div className={`grid gap-2 ${QUICKWRENCH_ENABLED ? 'grid-cols-2' : 'grid-cols-1'}`}>
 
               {/* Foreman standalone */}
               <button
@@ -510,8 +511,8 @@ export default function SignupClient({ foremanAvailable }: Props) {
                 {plan === 'foreman' && <SelectedDot />}
               </button>
 
-              {/* QuickWrench standalone */}
-              {(() => {
+              {/* QuickWrench standalone - hidden for NPI (lib/features.ts) */}
+              {QUICKWRENCH_ENABLED && (() => {
                 const qw = PLANS.find(p => p.tier === 'quickwrench')!
                 const isSelected = plan === 'quickwrench'
                 return (

@@ -12,7 +12,7 @@ import type { PlanTier } from '@/lib/stripe-plans'
 import { FOREMAN_SUBSCRIBER_CAP } from '@/lib/foreman/config'
 
 
-export const metadata = { title: 'Admin — LawnPlatform' }
+export const metadata = { title: 'Admin — National Pro Index' }
 
 const TIER_PRICE = Object.fromEntries(PLANS.map(p => [p.tier, p.price]))
 const TIER_LABEL: Record<string, string> = {

@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { LANDSCAPING_SERVICES } from '@/lib/scheduler'
+import { FIELD_ASSIST_ADD_TO_QUOTE } from '@/lib/features'
 
 type Tool = 'plant' | 'lawn' | 'pest' | 'estimate'
 
@@ -264,9 +265,13 @@ export default function FieldAssistClient({ laborRate }: { laborRate: number }) 
       {result && !loading && (
         <div className="nwi-card mt-4">
           <div className="prose-none">{renderMarkdown(result)}</div>
-          <button onClick={addToQuote} className="btn-secondary mt-5">
-            + Add to Quote
-          </button>
+          {/* Hidden: the only quote form is the old mechanic one (asks for a VIN).
+              See FIELD_ASSIST_ADD_TO_QUOTE in lib/features.ts. */}
+          {FIELD_ASSIST_ADD_TO_QUOTE && (
+            <button onClick={addToQuote} className="btn-secondary mt-5">
+              + Add to Quote
+            </button>
+          )}
         </div>
       )}
     </div>

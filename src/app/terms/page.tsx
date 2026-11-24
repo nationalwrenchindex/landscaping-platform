@@ -21,10 +21,10 @@ export default function TermsPage() {
 
           <Section title="1. Acceptance of Terms">
             <p>
-              By accessing or using the LawnPlatform&#8482; platform (the &ldquo;Service&rdquo;), you agree to
+              By accessing or using the National Pro Index&#8482; platform (the &ldquo;Service&rdquo;), you agree to
               be bound by these Terms of Service (&ldquo;Terms&rdquo;). If you do not agree to these Terms, do not access
               or use the Service. These Terms constitute a binding legal agreement between you (&ldquo;User&rdquo; or
-              &ldquo;Subscriber&rdquo;) and National Wrench Index (&ldquo;Company,&rdquo; &ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;).
+              &ldquo;Subscriber&rdquo;) and National Service Technologies, operating as National Pro Index (&ldquo;Company,&rdquo; &ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;).
             </p>
             <p>
               We reserve the right to update these Terms at any time. Continued use of the Service after
@@ -34,7 +34,7 @@ export default function TermsPage() {
 
           <Section title="2. Description of Service">
             <p>
-              LawnPlatform&#8482; is a software-as-a-service (SaaS) platform designed for
+              National Pro Index&#8482; is a software-as-a-service (SaaS) platform designed for
               mobile automotive professionals. The Service includes tools for:
             </p>
             <ul>
@@ -109,14 +109,14 @@ export default function TermsPage() {
           <Section title="6. Intellectual Property">
             <p>
               <strong className="text-white">National Wrench Index&#8482;</strong>,{' '}
-              <strong className="text-white">LawnPlatform&#8482;</strong>, and{' '}
+              <strong className="text-white">National Pro Index&#8482;</strong>, and{' '}
               <strong className="text-white">National Wrench Index QuickWrench&#8482;</strong> are
-              trademarks of National Wrench Index. All rights reserved. Unauthorized use of these marks
+              trademarks of National Service Technologies. All rights reserved. Unauthorized use of these marks
               is strictly prohibited.
             </p>
             <p>
               The Service, including all software, designs, text, graphics, and other content, is owned
-              by National Wrench Index and is protected by applicable intellectual property laws. You are
+              by National Service Technologies and is protected by applicable intellectual property laws. You are
               granted a limited, non-exclusive, non-transferable license to use the Service solely for
               your internal business purposes during your subscription term.
             </p>
@@ -212,9 +212,9 @@ function LegalNav() {
     <header className="border-b border-dark-border bg-dark-card">
       <div className="max-w-3xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
         <Link href="/login" className="flex items-center gap-3 group">
-          <span className="flex items-center justify-center h-9 w-9 rounded-lg font-condensed font-extrabold text-white" style={{ backgroundColor: "#16a34a" }}>LP</span>
+          <span className="flex items-center justify-center h-9 w-9 rounded-lg font-condensed font-extrabold text-white text-sm" style={{ backgroundColor: "#16a34a" }}>NPI</span>
           <span className="hidden sm:block font-condensed font-bold text-sm leading-tight">
-            <span style={{ color: "#16a34a" }}>LawnPlatform</span>
+            <span style={{ color: "#16a34a" }}>National Pro Index</span>
             <span className="text-white/70">&#8482;</span>
           </span>
         </Link>
@@ -233,7 +233,7 @@ function LegalFooter() {
   return (
     <footer className="border-t border-dark-border bg-dark-card mt-12">
       <div className="max-w-3xl mx-auto px-5 sm:px-8 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-white/25 text-xs">
-        <p>&copy; {new Date().getFullYear()} National Wrench Index. All rights reserved.</p>
+        <p>&copy; {new Date().getFullYear()} National Service Technologies. All rights reserved.</p>
         <div className="flex items-center gap-4">
           <Link href="/terms"   className="hover:text-white/60 transition-colors">Terms</Link>
           <Link href="/privacy" className="hover:text-white/60 transition-colors">Privacy</Link>

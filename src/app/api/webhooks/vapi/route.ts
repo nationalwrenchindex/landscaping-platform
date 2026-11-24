@@ -801,7 +801,7 @@ async function handleBookAppointment(
     const vehicleDesc = vehicleText
       ? (engineText ? `${vehicleText} (${engineText})` : vehicleText)
       : null
-    const body = `Foreman booked: ${firstName} ${lastName}${vehicleDesc ? ` · ${vehicleDesc}` : ''} · ${serviceName} · ${dateLabel} at ${timeLabel}${rawPhone.length >= 10 ? ' · ' + params.customer_phone : ''} — LawnPlatform`
+    const body = `Foreman booked: ${firstName} ${lastName}${vehicleDesc ? ` · ${vehicleDesc}` : ''} · ${serviceName} · ${dateLabel} at ${timeLabel}${rawPhone.length >= 10 ? ' · ' + params.customer_phone : ''} — National Pro Index`
     try {
       await sendSubscriberSms({ to: settings.mechanic_phone, body })
       console.log('[booking-sms] mechanic SMS sent to', settings.mechanic_phone)

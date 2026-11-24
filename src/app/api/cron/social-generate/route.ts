@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { generateSocialPosts, generatePostImage } from '@/lib/social/generate'
 import type { SocialPlatform } from '@/lib/social/generate'
+import { SOCIAL_ENABLED } from '@/lib/features'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,6 +18,12 @@ export async function GET(request: NextRequest) {
   const expected = process.env.CRON_SECRET
   if (expected && incomingSecret !== expected) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  // Social tool is hidden for NPI: its prompts write National Wrench Index
+  // marketing. Do nothing (no AI calls, no posts) until it is re-enabled.
+  if (!SOCIAL_ENABLED) {
+    return NextResponse.json({ generated: 0, skipped: 0, total: 0, disabled: true })
   }
 
   const apiKey    = process.env.ANTHROPIC_API_KEY

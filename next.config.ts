@@ -17,9 +17,15 @@ export default withSentryConfig(nextConfig, {
   // For all available options, see:
   // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
-  org: "national-wrench-index-llc",
+  // NO source map upload. The previous org/project pointed at National Wrench
+  // Index's Sentry account. If NPI gets its own Sentry project, add org/project
+  // (and SENTRY_AUTH_TOKEN in Vercel) and remove `disable: true`.
+  sourcemaps: {
+    disable: true,
+  },
 
-  project: "javascript-nextjs",
+  // Don't send the Sentry plugin's own build telemetry.
+  telemetry: false,
 
   // Only print logs for uploading source maps in CI
   silent: !process.env.CI,

@@ -18,8 +18,8 @@ const barlowCondensed = Barlow_Condensed({
 
 export const metadata: Metadata = {
   title: {
-    default: 'LawnPlatform',
-    template: '%s | LawnPlatform',
+    default: 'National Pro Index',
+    template: '%s | National Pro Index',
   },
   description:
     'Built for lawn and landscape pros — manage jobs, customers, quotes, invoices, and grow your business.',

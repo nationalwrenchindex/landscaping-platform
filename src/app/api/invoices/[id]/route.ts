@@ -55,6 +55,15 @@ async function enqueueTorqueWrenchReview(
       .maybeSingle()
     if (existing) return
 
+    // One review text per customer per job: skip if the landscaping sender
+    // (lib/landscaping/review-requests.ts) already texted this job.
+    const { data: simpleSent } = await supabase
+      .from('review_requests')
+      .select('id')
+      .eq('job_id', jobId)
+      .limit(1)
+    if ((simpleSent?.length ?? 0) > 0) return
+
     // Pull service_type from the linked job
     const { data: job } = await supabase
       .from('jobs')

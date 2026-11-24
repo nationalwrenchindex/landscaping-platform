@@ -270,7 +270,7 @@ export default function OnboardingPage() {
             </svg>
           </div>
           <div>
-            <p className="font-condensed font-bold text-white text-base tracking-widest">LAWNPLATFORM</p>
+            <p className="font-condensed font-bold text-white text-base tracking-widest">NATIONAL PRO INDEX</p>
             <p className="text-white/40 text-xs">Let&apos;s set up your account</p>
           </div>
         </div>
