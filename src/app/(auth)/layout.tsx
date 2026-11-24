@@ -90,7 +90,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         </div>
 
         <footer className="border-t border-dark-border px-6 py-4 flex items-center justify-center gap-5 text-white/25 text-xs">
-          <span>&copy; {new Date().getFullYear()} LawnPlatform · Powered by National Wrench Index LLC</span>
+          <span>&copy; {new Date().getFullYear()} LawnPlatform · Powered by National Pro Index</span>
           <Link href="/terms"   className="hover:text-white/50 transition-colors">Terms of Service</Link>
           <Link href="/privacy" className="hover:text-white/50 transition-colors">Privacy Policy</Link>
         </footer>

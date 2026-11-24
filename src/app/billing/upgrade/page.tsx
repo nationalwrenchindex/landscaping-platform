@@ -56,7 +56,7 @@ export default async function UpgradePage({
 
         <div className="text-center mb-10">
           <h1 className="font-condensed font-bold text-4xl text-white tracking-wide mb-2">
-            UNLOCK MORE OF NWI SUITE
+            UNLOCK MORE OF NATIONAL PRO INDEX
           </h1>
           {from && (
             <p className="text-white/40 text-sm">

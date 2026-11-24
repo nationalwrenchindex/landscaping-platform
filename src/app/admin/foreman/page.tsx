@@ -87,7 +87,7 @@ export default async function AdminForemanPage() {
 
   return (
     <div className="min-h-dvh bg-dark flex flex-col">
-      <AppNav businessName="NWI Admin" businessType={undefined} />
+      <AppNav businessName="NPI Admin" businessType={undefined} />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6">
 

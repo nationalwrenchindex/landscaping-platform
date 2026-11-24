@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import AppNav from '@/components/layout/AppNav'
 import SettingsClient from '@/components/settings/SettingsClient'
+import GoogleReviewUrlCard from '@/components/settings/GoogleReviewUrlCard'
 import ThemeToggle from '@/components/layout/ThemeToggle'
 import { hasQuickWrenchAccess } from '@/lib/subscription'
 import type { PricingRow } from '@/components/detailer/DetailerPricingEditor'
@@ -24,7 +25,7 @@ export default async function SettingsPage() {
   const [{ data: profile }, hasQW, { data: pricingRows }, { data: adjPresets }] = await Promise.all([
     supabase
       .from('profiles')
-      .select('full_name, business_name, slug, share_sms_template, share_email_subject, share_email_body, default_payment_instructions, average_mpg, fuel_type, offer_mpi_on_booking, default_labor_rate, default_parts_markup_percent, default_tax_percent, business_type, bill_consumables_separately, phone, sms_booking_notifications_enabled, business_logo_url')
+      .select('full_name, business_name, slug, share_sms_template, share_email_subject, share_email_body, default_payment_instructions, average_mpg, fuel_type, offer_mpi_on_booking, default_labor_rate, default_parts_markup_percent, default_tax_percent, business_type, bill_consumables_separately, phone, sms_booking_notifications_enabled, business_logo_url, google_review_url')
       .eq('id', user.id)
       .single(),
     hasQuickWrenchAccess(user.id),
@@ -64,6 +65,7 @@ export default async function SettingsPage() {
     phone?:                              string | null
     sms_booking_notifications_enabled?:  boolean | null
     business_logo_url?:                  string | null
+    google_review_url?:                  string | null
   }
 
   return (
@@ -118,6 +120,9 @@ export default async function SettingsPage() {
           </div>
         </div>
 
+        {/* Google review link (landscaping review requests) */}
+        <GoogleReviewUrlCard initialUrl={p.google_review_url ?? null} />
+
         <SettingsClient
           slug={p.slug ?? null}
           businessName={p.business_name ?? ''}
@@ -150,7 +155,7 @@ export default async function SettingsPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="font-semibold text-white text-sm">Sign out</p>
-              <p className="text-white/40 text-xs mt-0.5">Sign out of your NWI account on this device</p>
+              <p className="text-white/40 text-xs mt-0.5">Sign out of your NPI account on this device</p>
             </div>
             <form action={signOut}>
               <button

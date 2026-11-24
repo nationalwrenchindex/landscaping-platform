@@ -196,7 +196,7 @@ export default function ForemanSettingsClient({
 
   const features = [
     'Answers calls instantly — even when you\'re elbows-deep in an engine',
-    'Books jobs directly into your NWI Scheduler — no manual entry',
+    'Books jobs directly into your NPI Scheduler — no manual entry',
     'Texts customers confirmation and on-my-way alerts automatically',
   ]
 
@@ -342,7 +342,7 @@ export default function ForemanSettingsClient({
           <div className="flex items-center justify-between gap-4 pt-4 border-t border-dark-border">
             <div>
               <p className="font-condensed font-bold text-3xl text-orange">$59<span className="text-white/40 text-base font-normal">/month</span></p>
-              <p className="text-white/30 text-xs mt-0.5">Add to any existing NWI plan</p>
+              <p className="text-white/30 text-xs mt-0.5">Add to any existing NPI plan</p>
             </div>
             {capAvailable ? (
               <button

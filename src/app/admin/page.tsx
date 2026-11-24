@@ -112,12 +112,16 @@ function StatCard({
   )
 }
 
-type AccountType = 'Detailer' | 'Detailer + QW' | 'Mechanic' | 'Mechanic + QW' | 'QuickWrench' | null
+type AccountType = 'Detailer' | 'Detailer + QW' | 'Mechanic' | 'Mechanic + QW' | 'QuickWrench' | 'Landscaping' | 'HVAC' | 'Plumbing' | 'Electrical' | null
 
 function getAccountType(businessType: string | null, tier: PlanTier | null): AccountType {
   const hasQW = tier ? (TIER_MODULES[tier]?.includes('quickwrench') ?? false) : false
   if (businessType === 'detailer') return hasQW ? 'Detailer + QW' : 'Detailer'
   if (businessType === 'mechanic') return hasQW ? 'Mechanic + QW' : 'Mechanic'
+  if (businessType === 'landscaping') return 'Landscaping'
+  if (businessType === 'hvac')        return 'HVAC'
+  if (businessType === 'plumbing')    return 'Plumbing'
+  if (businessType === 'electrical')  return 'Electrical'
   return null
 }
 
@@ -129,6 +133,10 @@ function TypeBadge({ accountType }: { accountType: AccountType }) {
     'Mechanic':      'bg-orange/20 text-orange-light',
     'Mechanic + QW': 'bg-purple-500/15 text-purple-400',
     'QuickWrench':   'bg-green-500/15 text-green-400',
+    'Landscaping':   'bg-green-500/15 text-green-400',
+    'HVAC':          'bg-blue-500/15 text-blue-400',
+    'Plumbing':      'bg-blue-500/15 text-blue-400',
+    'Electrical':    'bg-orange/20 text-orange-light',
   }
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${styles[accountType]}`}>
@@ -205,7 +213,7 @@ export default async function AdminPage() {
 
   return (
     <div className="min-h-dvh bg-dark flex flex-col">
-      <AppNav businessName="NWI Admin" businessType={undefined} />
+      <AppNav businessName="NPI Admin" businessType={undefined} />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6">
 

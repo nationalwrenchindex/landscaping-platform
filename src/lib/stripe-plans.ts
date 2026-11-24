@@ -23,7 +23,7 @@ export const PLANS: {
 }[] = [
   {
     tier:      'starter',
-    name:      'NWI Starter',
+    name:      'NPI Starter',
     price:     1900,
     priceKey:  'STARTER',
     modules:   [],
@@ -37,7 +37,7 @@ export const PLANS: {
   },
   {
     tier:      'pro',
-    name:      'NWI Pro',
+    name:      'NPI Pro',
     price:     3400,
     priceKey:  'PRO',
     modules:   [],
@@ -52,7 +52,7 @@ export const PLANS: {
   },
   {
     tier:      'full_suite',
-    name:      'NWI Full Suite',
+    name:      'NPI Full Suite',
     price:     4900,
     priceKey:  'FULL_SUITE',
     modules:   ['scheduler', 'intel', 'financials'],
@@ -67,7 +67,7 @@ export const PLANS: {
   },
   {
     tier:      'full_suite_plus',
-    name:      'NWI Full Suite Plus',
+    name:      'NPI Full Suite Plus',
     price:     9900,
     priceKey:  'FULL_SUITE_PLUS',
     priceId:   'price_1TPTFEBalq9wt09kKvpgwyfR',
@@ -84,7 +84,7 @@ export const PLANS: {
   },
   {
     tier:      'elite',
-    name:      'NWI Elite',
+    name:      'NPI Elite',
     price:     15900,
     priceKey:  'ELITE',
     modules:   ['scheduler', 'intel', 'financials', 'quickwrench', 'torquewrench', 'foreman'],
@@ -99,7 +99,7 @@ export const PLANS: {
   },
   {
     tier:      'foreman_standalone',
-    name:      'NWI Foreman Standalone',
+    name:      'NPI Foreman Standalone',
     price:     5900,
     priceKey:  'FOREMAN',
     modules:   ['scheduler', 'foreman'],
@@ -113,7 +113,7 @@ export const PLANS: {
   },
   {
     tier:      'quickwrench',
-    name:      'NWI QuickWrench',
+    name:      'NPI QuickWrench',
     price:     6900,
     priceKey:  'QUICKWRENCH',
     modules:   ['quickwrench'],

@@ -35,13 +35,13 @@ const STATUS_DISPLAY: Record<string, { label: string; badge: string }> = {
 }
 
 const TIER_DISPLAY: Record<string, string> = {
-  starter:            'NWI Starter',
-  pro:                'NWI Pro',
-  full_suite:         'NWI Full Suite',
-  full_suite_plus:    'NWI Full Suite Plus',
-  elite:              'NWI Elite',
-  foreman_standalone: 'NWI Foreman Standalone',
-  quickwrench:        'NWI QuickWrench',
+  starter:            'NPI Starter',
+  pro:                'NPI Pro',
+  full_suite:         'NPI Full Suite',
+  full_suite_plus:    'NPI Full Suite Plus',
+  elite:              'NPI Elite',
+  foreman_standalone: 'NPI Foreman Standalone',
+  quickwrench:        'NPI QuickWrench',
 }
 
 // NWI tiers in price order (excludes foreman_standalone — different product track)
@@ -301,20 +301,20 @@ function ForemanOnlyView({
           <p className="text-white/30 text-xs uppercase tracking-widest mb-3">Module Access</p>
           <ModuleChips ownedModules={['scheduler']} foremanActive={true} />
           <p className="text-white/25 text-xs mt-3">
-            Foreman includes free Scheduler access. Add an NWI tier to unlock Intel Hub, Financials, and more.
+            Foreman includes free Scheduler access. Add an NPI tier to unlock Intel Hub, Financials, and more.
           </p>
         </div>
       </div>
 
       <div>
-        <p className="text-white/30 text-xs uppercase tracking-widest mb-3">Add an NWI Tier</p>
+        <p className="text-white/30 text-xs uppercase tracking-widest mb-3">Add an NPI Tier</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {nwiPlans.map(plan => (
             <PlanCard key={plan.tier} plan={plan} isCurrent={false} onSelect={onChangePlan} loading={loadingPlan} />
           ))}
         </div>
         <p className="text-white/25 text-xs mt-3">
-          NWI tiers are billed separately alongside your Foreman subscription.
+          NPI tiers are billed separately alongside your Foreman subscription.
         </p>
       </div>
     </div>
@@ -430,7 +430,7 @@ function ActiveSubscriptionView({
       {upgradePlans.length > 0 && (
         <div>
           <p className="text-white/30 text-xs uppercase tracking-widest mb-3">
-            {(isForemanStandalone || isQuickWrenchStandalone) ? 'Add an NWI Tier' : 'Available Upgrades'}
+            {(isForemanStandalone || isQuickWrenchStandalone) ? 'Add an NPI Tier' : 'Available Upgrades'}
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {upgradePlans.map(plan => (
@@ -445,7 +445,7 @@ function ActiveSubscriptionView({
           </div>
           {(isForemanStandalone || isQuickWrenchStandalone) && (
             <p className="text-white/25 text-xs mt-3">
-              NWI tiers are billed separately alongside your standalone subscription.
+              NPI tiers are billed separately alongside your standalone subscription.
             </p>
           )}
         </div>

@@ -96,7 +96,7 @@ export async function sendNewSubscriberAlert({
       subject: `New Subscriber — ${tier} — ${email}`,
       html: `
         <div style="font-family:sans-serif;max-width:480px;margin:0 auto;background:#1a1a1a;color:#fff;padding:32px;border-radius:12px;">
-          <h2 style="color:#16a34a;font-size:24px;margin:0 0 20px;">🔔 New NWI Subscriber!</h2>
+          <h2 style="color:#16a34a;font-size:24px;margin:0 0 20px;">🔔 New NPI Subscriber!</h2>
           <table style="width:100%;border-collapse:collapse;">
             <tr><td style="color:#999;padding:6px 0;width:110px;">Name</td><td style="color:#fff;padding:6px 0;">${name}</td></tr>
             <tr><td style="color:#999;padding:6px 0;">Email</td><td style="color:#fff;padding:6px 0;">${email}</td></tr>

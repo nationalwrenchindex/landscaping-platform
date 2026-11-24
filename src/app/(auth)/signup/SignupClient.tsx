@@ -493,7 +493,7 @@ export default function SignupClient({ foremanAvailable }: Props) {
                 <div className="text-orange font-bold text-xs mb-1.5">
                   $59<span className="text-white/40 text-[10px] font-normal">/mo</span>
                 </div>
-                <p className="text-[10px] text-white/40 mb-2 leading-tight">AI Receptionist · No NWI tier required</p>
+                <p className="text-[10px] text-white/40 mb-2 leading-tight">AI Receptionist · No NPI tier required</p>
                 <ul className="space-y-0.5">
                   {FOREMAN_FEATURES.slice(0, 4).map((f) => (
                     <li key={f} className="flex items-start gap-1 text-[10px] text-white/60">
@@ -531,7 +531,7 @@ export default function SignupClient({ foremanAvailable }: Props) {
                     <div className="text-orange font-bold text-xs mb-1.5">
                       $69<span className="text-white/40 text-[10px] font-normal">/mo</span>
                     </div>
-                    <p className="text-[10px] text-white/40 mb-2 leading-tight">VIN Scanner · No NWI tier required</p>
+                    <p className="text-[10px] text-white/40 mb-2 leading-tight">VIN Scanner · No NPI tier required</p>
                     <ul className="space-y-0.5">
                       {qw.features.slice(0, 4).map((f) => (
                         <li key={f} className="flex items-start gap-1 text-[10px] text-white/60">
@@ -567,9 +567,9 @@ export default function SignupClient({ foremanAvailable }: Props) {
 
           <p className="text-white/30 text-xs text-center mt-3">
             {plan === 'foreman'
-              ? '$59/mo · No NWI tier required · Cancel anytime.'
+              ? '$59/mo · No NPI tier required · Cancel anytime.'
               : plan === 'quickwrench'
-              ? '$69/mo · No NWI tier required · 14-day free trial.'
+              ? '$69/mo · No NPI tier required · 14-day free trial.'
               : 'No charge for 14 days. Cancel anytime.'}
           </p>
         </form>

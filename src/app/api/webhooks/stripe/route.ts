@@ -149,7 +149,7 @@ export async function POST(request: NextRequest) {
                 const ts = new Date().toLocaleString('en-US', { timeZone: 'America/New_York' })
                 await sendSubscriberSms({
                   to:   brockPhone,
-                  body: `New NWI Subscriber! Name: ${alertName} Email: ${alertEmail} Plan: Foreman Add-on Amount: $59/mo Time: ${ts}`,
+                  body: `New NPI Subscriber! Name: ${alertName} Email: ${alertEmail} Plan: Foreman Add-on Amount: $59/mo Time: ${ts}`,
                 })
               }
             } catch { /* non-critical */ }
@@ -267,7 +267,7 @@ export async function POST(request: NextRequest) {
               const amount = amountDollars != null ? `$${amountDollars}/mo` : '—'
               await sendSubscriberSms({
                 to:   brockPhone,
-                body: `New NWI Subscriber! Name: ${name} Email: ${email} Plan: ${planName} Amount: ${amount} Time: ${ts}`,
+                body: `New NPI Subscriber! Name: ${name} Email: ${email} Plan: ${planName} Amount: ${amount} Time: ${ts}`,
               })
             }
           } catch { /* non-critical */ }
@@ -294,7 +294,7 @@ export async function POST(request: NextRequest) {
               const ts         = new Date().toLocaleString('en-US', { timeZone: 'America/New_York' })
               await sendSubscriberSms({
                 to:   adminPhone,
-                body: `NEW NWI SUBSCRIBER - Name: ${name} - Email: ${email} - Plan: ${planName} - Time: ${ts}`,
+                body: `NEW NPI SUBSCRIBER - Name: ${name} - Email: ${email} - Plan: ${planName} - Time: ${ts}`,
               })
             } catch { /* non-critical */ }
           })()
@@ -360,7 +360,7 @@ export async function POST(request: NextRequest) {
               const ts         = new Date().toLocaleString('en-US', { timeZone: 'America/New_York' })
               await sendSubscriberSms({
                 to:   adminPhoneDel,
-                body: `NWI CANCELLATION - Name: ${name} - Email: ${email} - Plan: ${planName} - Time: ${ts}`,
+                body: `NPI CANCELLATION - Name: ${name} - Email: ${email} - Plan: ${planName} - Time: ${ts}`,
               })
             } catch { /* non-critical */ }
           })()

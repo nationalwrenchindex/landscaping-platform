@@ -11,7 +11,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from('profiles')
-    .select('average_mpg, fuel_type, offer_mpi_on_booking, default_labor_rate, default_parts_markup_percent, default_tax_percent')
+    .select('average_mpg, fuel_type, offer_mpi_on_booking, default_labor_rate, default_parts_markup_percent, default_tax_percent, google_review_url')
     .eq('id', user.id)
     .single()
 
@@ -24,6 +24,7 @@ export async function GET() {
     default_labor_rate:            data?.default_labor_rate            ?? 125,
     default_parts_markup_percent:  data?.default_parts_markup_percent  ?? 20,
     default_tax_percent:           data?.default_tax_percent           ?? 8.5,
+    google_review_url:             data?.google_review_url             ?? null,
   })
 }
 
@@ -100,6 +101,19 @@ export async function PUT(request: NextRequest) {
     update.bill_consumables_separately = !!body.bill_consumables_separately
   }
 
+  // Google review link used by the landscaping review request
+  // (lib/landscaping/review-requests.ts). Empty clears it.
+  if ('google_review_url' in body) {
+    const raw = typeof body.google_review_url === 'string' ? body.google_review_url.trim() : ''
+    if (!raw) {
+      update.google_review_url = null
+    } else {
+      const checked = validateGoogleReviewUrl(raw)
+      if (!checked.ok) return NextResponse.json({ error: checked.error }, { status: 400 })
+      update.google_review_url = checked.url
+    }
+  }
+
   if (Object.keys(update).length === 0) {
     return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 })
   }
@@ -108,4 +122,31 @@ export async function PUT(request: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   return NextResponse.json({ ok: true })
+}
+
+// The link is texted to the business's customers, so only accept https links on
+// Google's own review / maps / short-link hosts.
+const GOOGLE_REVIEW_HOSTS = new Set([
+  'g.page',
+  'search.google.com',
+  'www.google.com',
+  'google.com',
+  'maps.google.com',
+  'maps.app.goo.gl',
+  'goo.gl',
+])
+
+function validateGoogleReviewUrl(raw: string): { ok: true; url: string } | { ok: false; error: string } {
+  if (raw.length > 500) return { ok: false, error: 'Google review link is too long.' }
+  let u: URL
+  try { u = new URL(raw) } catch { return { ok: false, error: 'Enter a full link starting with https://' } }
+  if (u.protocol !== 'https:') return { ok: false, error: 'Google review link must start with https://' }
+  const host = u.hostname.toLowerCase()
+  if (!GOOGLE_REVIEW_HOSTS.has(host)) {
+    return { ok: false, error: 'That does not look like a Google review link (g.page, search.google.com, google.com/maps or maps.app.goo.gl).' }
+  }
+  if (host === 'goo.gl' && !u.pathname.startsWith('/maps')) {
+    return { ok: false, error: 'Only goo.gl/maps short links are accepted.' }
+  }
+  return { ok: true, url: u.toString() }
 }

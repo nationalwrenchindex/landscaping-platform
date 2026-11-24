@@ -302,7 +302,7 @@ export default function ImportClient() {
               {/* Header row */}
               <div className="grid grid-cols-2 gap-3">
                 <p className="nwi-label">Your Column</p>
-                <p className="nwi-label">NWI Field</p>
+                <p className="nwi-label">NPI Field</p>
               </div>
               {parsed.headers.map(col => (
                 <div key={col} className="grid grid-cols-2 gap-3 items-center">

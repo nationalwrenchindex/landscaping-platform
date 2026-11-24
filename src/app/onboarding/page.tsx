@@ -100,7 +100,7 @@ export default function OnboardingPage() {
   const [step, setStep] = useState(1)
 
   // Step 1 — Business type
-  const [businessType, setBusinessType] = useState<'mechanic' | 'detailer' | null>(null)
+  const [businessType, setBusinessType] = useState<'landscaping' | 'mechanic' | 'detailer' | null>(null)
   const [savingType, setSavingType]     = useState(false)
 
   // Step 2 — Business info
@@ -160,7 +160,7 @@ export default function OnboardingPage() {
     }))
   }
 
-  async function selectBusinessType(type: 'mechanic' | 'detailer' | 'hd_tech') {
+  async function selectBusinessType(type: 'landscaping' | 'mechanic' | 'detailer' | 'hd_tech') {
     if (type === 'hd_tech') {
       setSavingType(true)
       try {
@@ -238,7 +238,7 @@ export default function OnboardingPage() {
     const { error } = await supabase
       .from('profiles')
       .update({
-        business_type:            businessType ?? 'mechanic',
+        business_type:            businessType ?? 'landscaping',
         business_name:            businessName.trim(),
         phone:                    phone.trim() || null,
         service_area_description: serviceArea.trim(),
@@ -290,29 +290,29 @@ export default function OnboardingPage() {
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-              {/* Mobile Mechanic */}
+              {/* Landscaper */}
               <button
                 type="button"
                 disabled={savingType}
-                onClick={() => selectBusinessType('mechanic')}
+                onClick={() => selectBusinessType('landscaping')}
                 className={`rounded-2xl border p-5 text-left transition-all ${
-                  businessType === 'mechanic'
+                  businessType === 'landscaping'
                     ? 'border-orange bg-orange/10 ring-1 ring-orange/40'
                     : 'border-dark-border bg-dark-card hover:border-white/20 hover:bg-dark-input'
                 }`}
               >
-                <div className={`w-10 h-10 rounded-xl mb-3 flex items-center justify-center ${businessType === 'mechanic' ? 'bg-orange/20' : 'bg-white/5'}`}>
-                  <svg className={`w-5 h-5 ${businessType === 'mechanic' ? 'text-orange' : 'text-white/40'}`} fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+                <div className={`w-10 h-10 rounded-xl mb-3 flex items-center justify-center ${businessType === 'landscaping' ? 'bg-orange/20' : 'bg-white/5'}`}>
+                  <svg className={`w-5 h-5 ${businessType === 'landscaping' ? 'text-orange' : 'text-white/40'}`} fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
                     <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
                   </svg>
                 </div>
-                <p className={`font-condensed font-bold text-lg tracking-wide mb-1 ${businessType === 'mechanic' ? 'text-orange' : 'text-white'}`}>
+                <p className={`font-condensed font-bold text-lg tracking-wide mb-1 ${businessType === 'landscaping' ? 'text-orange' : 'text-white'}`}>
                   Landscaper
                 </p>
                 <p className="text-white/40 text-xs leading-relaxed">
                   Mowing, cleanups, fertilizing, and full-service lawn &amp; landscape care.
                 </p>
-                {businessType === 'mechanic' && (
+                {businessType === 'landscaping' && (
                   <p className="text-orange text-xs font-semibold mt-2">Selected</p>
                 )}
               </button>

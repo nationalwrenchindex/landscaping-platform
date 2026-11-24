@@ -1,9 +1,11 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { HD_SUBDOMAIN_ENABLED } from '@/lib/features'
 
 export async function middleware(request: NextRequest) {
   const hostname = request.headers.get('host') ?? ''
-  const isHD = hostname.startsWith('hd.')
+  // HD vertical is hidden: with the switch off, hd.* behaves like any other host.
+  const isHD = HD_SUBDOMAIN_ENABLED && hostname.startsWith('hd.')
   const path = request.nextUrl.pathname
 
   // ── Determine effective path (rewrite /hd prefix for HD subdomain) ──────────

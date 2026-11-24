@@ -207,7 +207,7 @@ function JobRow({ job, isLast }: { job: TodayJob; isLast: boolean }) {
       </div>
 
       {/* Link */}
-      <Link href="/scheduler" className="flex-shrink-0 text-white/20 hover:text-orange transition-colors mt-0.5">
+      <Link href="/schedule" className="flex-shrink-0 text-white/20 hover:text-orange transition-colors mt-0.5">
         <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
         </svg>
@@ -276,7 +276,7 @@ function InvoiceRow({ inv, todayStr }: { inv: OutstandingInvoice; todayStr: stri
       <p className={`font-condensed font-bold text-lg flex-shrink-0 ${isOverdue ? 'text-danger' : 'text-white'}`}>
         ${Number(inv.total).toFixed(2)}
       </p>
-      <Link href="/financials" className="text-white/20 hover:text-orange transition-colors">
+      <Link href="/invoices" className="text-white/20 hover:text-orange transition-colors">
         <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
         </svg>
@@ -551,9 +551,9 @@ export default async function DashboardPage({
                   <p className="font-condensed font-bold text-white text-lg tracking-wide">TODAY&apos;S SCHEDULE</p>
                   <p className="text-white/30 text-xs mt-0.5">{dayLabel}</p>
                 </div>
-                <Link href="/scheduler"
+                <Link href="/schedule"
                   className="text-xs text-white/40 hover:text-orange transition-colors border border-dark-border hover:border-orange/30 rounded-lg px-3 py-1.5">
-                  Open Scheduler →
+                  Open Schedule →
                 </Link>
               </div>
 
@@ -568,7 +568,7 @@ export default async function DashboardPage({
                     </svg>
                   </div>
                   <p className="text-white/25 text-sm font-medium">No services scheduled yet. Share your booking link to get started.</p>
-                  <Link href="/scheduler"
+                  <Link href="/schedule"
                     className="mt-3 inline-flex items-center gap-1 text-xs text-orange hover:text-orange/80 transition-colors">
                     + Book a service
                   </Link>
@@ -579,7 +579,7 @@ export default async function DashboardPage({
                     <JobRow key={job.id} job={job} isLast={i === todayJobs.length - 1} />
                   ))}
                   <div className="pt-4">
-                    <Link href="/scheduler"
+                    <Link href="/schedule"
                       className="text-xs text-white/30 hover:text-orange transition-colors">
                       View full calendar →
                     </Link>
@@ -620,12 +620,6 @@ export default async function DashboardPage({
                   {topAlerts.map((alert) => (
                     <AlertCard key={alert.vehicle.id} alert={alert} />
                   ))}
-                  <div className="pt-4">
-                    <Link href="/intel"
-                      className="text-xs text-white/30 hover:text-orange transition-colors">
-                      View all alerts →
-                    </Link>
-                  </div>
                 </div>
               )}
             </div>
@@ -643,9 +637,9 @@ export default async function DashboardPage({
                   : 'No outstanding invoices'}
               </p>
             </div>
-            <Link href="/financials"
+            <Link href="/invoices"
               className="text-xs text-white/40 hover:text-orange transition-colors border border-dark-border hover:border-orange/30 rounded-lg px-3 py-1.5">
-              Open Financials →
+              Open Invoices →
             </Link>
           </div>
 
@@ -661,7 +655,7 @@ export default async function DashboardPage({
               ))}
               {outstandingInvs.length >= 8 && (
                 <div className="pt-4 text-center">
-                  <Link href="/financials" className="text-xs text-white/30 hover:text-orange transition-colors">
+                  <Link href="/invoices" className="text-xs text-white/30 hover:text-orange transition-colors">
                     View all outstanding invoices →
                   </Link>
                 </div>
@@ -682,8 +676,8 @@ export default async function DashboardPage({
             )}
             {[
               {
-                href: '/scheduler',
-                label: 'SCHEDULER',
+                href: '/schedule',
+                label: 'SCHEDULE',
                 sub: 'Calendar, jobs & notifications',
                 accent: 'orange' as const,
                 icon: (
@@ -696,23 +690,9 @@ export default async function DashboardPage({
                 ),
               },
               {
-                href: '/intel',
-                label: 'INTEL HUB',
-                sub: 'Customers, vehicles & alerts',
-                accent: 'blue' as const,
-                icon: (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                    <circle cx="9" cy="7" r="4" />
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                  </svg>
-                ),
-              },
-              {
-                href: '/financials',
-                label: 'FINANCIALS',
-                sub: 'Invoices, expenses & P&L',
+                href: '/invoices',
+                label: 'INVOICES',
+                sub: 'Invoices & recurring billing',
                 accent: 'success' as const,
                 icon: (
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">

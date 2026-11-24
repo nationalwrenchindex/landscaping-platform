@@ -42,14 +42,14 @@ const MODULES: { slug: SelectableModule; icon: React.ReactNode }[] = [
 
 const PLAN_META: Record<'starter' | 'pro', { name: string; price: string; pickCount: number; heading: string; sub: string }> = {
   starter: {
-    name:      'NWI Starter',
+    name:      'NPI Starter',
     price:     '$19',
     pickCount: 1,
     heading:   'CHOOSE YOUR 1 MODULE',
     sub:       'Pick the module that matters most to your business right now. You can upgrade to Pro anytime to add more.',
   },
   pro: {
-    name:      'NWI Pro',
+    name:      'NPI Pro',
     price:     '$34',
     pickCount: 2,
     heading:   'CHOOSE YOUR 2 MODULES',
